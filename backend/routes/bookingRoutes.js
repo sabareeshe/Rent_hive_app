@@ -18,6 +18,6 @@ router.route('/:id')
   .get(protect, getBookingById);
 
 router.route('/:id/status')
-  .put(protect, owner, updateBookingStatus);
+  .put(protect, updateBookingStatus);
 
 module.exports = router;

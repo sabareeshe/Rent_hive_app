@@ -13,14 +13,14 @@ const upload = require('../middleware/uploadMiddleware');
 
 router.route('/')
   .get(getListings)
-  .post(protect, owner, upload.array('images', 5), createListing);
+  .post(protect, upload.array('images', 5), createListing);
 
 router.route('/my-listings')
-  .get(protect, owner, getMyListings);
+  .get(protect, getMyListings);
 
 router.route('/:id')
   .get(getListingById)
-  .put(protect, owner, upload.array('images', 5), updateListing)
-  .delete(protect, owner, deleteListing);
+  .put(protect, upload.array('images', 5), updateListing)
+  .delete(protect, deleteListing);
 
 module.exports = router;

@@ -4,15 +4,15 @@ const { getDashboardStats, getEarnings, getAnalytics, requestWithdrawal } = requ
 const { protect, owner } = require('../middleware/authMiddleware');
 
 router.route('/dashboard/stats')
-  .get(protect, owner, getDashboardStats);
+  .get(protect, getDashboardStats);
 
 router.route('/earnings')
-  .get(protect, owner, getEarnings);
+  .get(protect, getEarnings);
 
 router.route('/analytics')
-  .get(protect, owner, getAnalytics);
+  .get(protect, getAnalytics);
 
 router.route('/withdraw')
-  .post(protect, owner, requestWithdrawal);
+  .post(protect, requestWithdrawal);
 
 module.exports = router;
