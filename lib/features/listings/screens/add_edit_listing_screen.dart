@@ -108,7 +108,7 @@ class _AddEditListingScreenState extends ConsumerState<AddEditListingScreen> {
   Future<void> _selectDateRange(BuildContext context) async {
     final DateTimeRange? picked = await showDateRangePicker(
       context: context,
-      firstDate: DateTime.now(),
+      firstDate: DateTime.now().subtract(const Duration(days: 1)),
       lastDate: DateTime.now().add(const Duration(days: 365)),
       initialDateRange: DateTimeRange(start: _availableFrom, end: _availableTo),
     );
