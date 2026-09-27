@@ -102,14 +102,8 @@ class _ImagePickerWidgetState extends State<ImagePickerWidget> {
                   _pickImage(ImageSource.gallery);
                 },
               ),
-              ListTile(
-                leading: const Icon(Icons.photo_camera),
-                title: const Text('Camera'),
-                onTap: () {
-                  Navigator.of(context).pop();
-                  _pickImage(ImageSource.camera);
-                },
-              ),
+              // Camera option temporarily disabled to prevent Android OS from killing the app
+              // due to low memory when launching the native camera.
             ],
           ),
         );
