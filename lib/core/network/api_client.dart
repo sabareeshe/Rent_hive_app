@@ -1,5 +1,3 @@
-import 'dart:io';
-import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
 import 'token_interceptor.dart';
 import 'error_interceptor.dart';
@@ -7,8 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Provides the base URL depending on environment
 final baseUrlProvider = Provider<String>((ref) {
-  // Using your laptop's local IP address so the physical phone can connect over Wi-Fi
-  return 'http://172.19.103.56:5000/api';
+  // Using your live cloud backend so the app works anywhere!
+  return 'https://rent-hive-app.onrender.com/api';
 });
 
 // Provides the Dio client instance
