@@ -3,6 +3,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import '../models/my_listing.dart';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
+
 class ListingsRepository {
   final Dio _dio;
   ListingsRepository(this._dio);
@@ -54,7 +56,18 @@ class ListingsRepository {
         'data': jsonEncode(listing.toJson()),
       });
       for (var path in imagePaths) {
-        formData.files.add(MapEntry('images', await MultipartFile.fromFile(path)));
+        if (kIsWeb) {
+          final response = await Dio().get(
+            path,
+            options: Options(responseType: ResponseType.bytes),
+          );
+          formData.files.add(MapEntry(
+            'images',
+            MultipartFile.fromBytes(response.data, filename: 'image.jpg'),
+          ));
+        } else {
+          formData.files.add(MapEntry('images', await MultipartFile.fromFile(path)));
+        }
       }
     }
 

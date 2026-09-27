@@ -5,6 +5,8 @@ import '../models/user_model.dart';
 import '../models/review_model.dart';
 import '../models/settings_model.dart';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
+
 class ProfileRepository {
   final Dio _dio;
   ProfileRepository(this._dio);
@@ -57,9 +59,20 @@ class ProfileRepository {
     FormData? formData;
     
     if (imagePath != null) {
+      MultipartFile file;
+      if (kIsWeb) {
+        final response = await Dio().get(
+          imagePath,
+          options: Options(responseType: ResponseType.bytes),
+        );
+        file = MultipartFile.fromBytes(response.data, filename: 'avatar.jpg');
+      } else {
+        file = await MultipartFile.fromFile(imagePath, filename: 'avatar.jpg');
+      }
+      
       formData = FormData.fromMap({
         ...updatedUser.toJson(),
-        'avatar': await MultipartFile.fromFile(imagePath, filename: 'avatar.jpg'),
+        'avatar': file,
       });
     }
 
