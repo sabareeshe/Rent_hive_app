@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import '../../../core/theme/app_colors.dart';
 
 class ImagePickerWidget extends StatefulWidget {
@@ -42,11 +43,20 @@ class _ImagePickerWidgetState extends State<ImagePickerWidget> {
     try {
       final XFile? image = await _picker.pickImage(source: source);
       if (image != null) {
+        // flutter_image_compress does not support web
+        if (kIsWeb) {
+          setState(() {
+            _images.add(image.path);
+          });
+          widget.onImagesChanged(_images);
+          return;
+        }
+
         setState(() {
           _isCompressing = true;
         });
 
-        // Compress image
+        // Compress image (Mobile only)
         final String targetPath = '${image.path}_compressed.jpg';
         final compressedFile = await FlutterImageCompress.compressAndGetFile(
           image.path,
