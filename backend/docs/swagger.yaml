@@ -1,0 +1,71 @@
+openapi: 3.0.0
+info:
+  title: RentHive API
+  description: Backend APIs for the RentHive application
+  version: 1.0.0
+servers:
+  - url: http://localhost:5000
+    description: Local server
+paths:
+  /api/auth/register:
+    post:
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                username:
+                  type: string
+                email:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '201':
+          description: User registered successfully
+
+  /api/auth/login:
+    post:
+      summary: Login user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '200':
+          description: User logged in successfully
+
+  /api/listings:
+    get:
+      summary: Get all listings
+      responses:
+        '200':
+          description: Successful response
+
+  /api/bookings:
+    post:
+      summary: Create a booking
+      security:
+        - bearerAuth: []
+      responses:
+        '201':
+          description: Booking created
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
