@@ -10,7 +10,7 @@ class ErrorInterceptor extends Interceptor {
         err.type == DioExceptionType.sendTimeout) {
       errorMessage = 'Connection timed out. Please try again.';
     } else if (err.type == DioExceptionType.badResponse) {
-      if (err.response?.data != null && err.response?.data['message'] != null) {
+      if (err.response?.data != null && err.response?.data is Map && err.response?.data['message'] != null) {
         errorMessage = err.response?.data['message'];
       } else {
         switch (err.response?.statusCode) {
