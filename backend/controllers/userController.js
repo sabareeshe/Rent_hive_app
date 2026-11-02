@@ -37,8 +37,8 @@ const updateUserProfile = async (req, res, next) => {
       
       if (req.file) {
         user.avatarUrl = req.file.path.startsWith('http') 
-          ? req.file.path 
-          : `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+          ? req.file.path.replace('http://', 'https://')
+          : `https://${req.get('host')}/uploads/${req.file.filename}`;
       } else if (req.body.avatarUrl) {
         user.avatarUrl = req.body.avatarUrl;
       }

@@ -71,6 +71,8 @@ class UserModel {
     var rawAvatar = json['avatarUrl']?.toString() ?? '';
     if (rawAvatar.startsWith('/')) {
       rawAvatar = 'https://rent-hive-app.onrender.com$rawAvatar';
+    } else if (rawAvatar.startsWith('http://')) {
+      rawAvatar = rawAvatar.replaceFirst('http://', 'https://');
     }
     final stableAvatar = (rawAvatar.isNotEmpty && !rawAvatar.contains('pravatar.cc/150'))
         ? rawAvatar
@@ -81,7 +83,7 @@ class UserModel {
       fullName: json['name'] ?? '',
       username: json['username'] ?? '',
       email: json['email'] ?? '',
-      phoneNumber: json['phone'] ?? '',
+      phoneNumber: json['phone'] ?? json['phoneNumber'] ?? '',
       avatarUrl: stableAvatar,
       bio: json['bio'] ?? '',
       city: json['city'] ?? '',

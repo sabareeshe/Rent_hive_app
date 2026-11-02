@@ -27,8 +27,19 @@ try {
   console.log('Swagger documentation not found or invalid. Skipping /api-docs setup.');
 }
 
+// Trust proxy (enables secure protocol detection on Render/Cloudflare)
+app.enable('trust proxy');
+
 // Static uploads folder
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use(
+  '/uploads',
+  cors(),
+  (req, res, next) => {
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    next();
+  },
+  express.static(path.join(__dirname, 'uploads'))
+);
 
 // Routes
 app.get('/', (req, res) => {

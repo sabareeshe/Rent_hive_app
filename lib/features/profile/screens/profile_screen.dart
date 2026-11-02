@@ -35,9 +35,34 @@ class ProfileScreen extends ConsumerWidget {
                     children: [
                       Stack(
                         children: [
-                          CircleAvatar(
-                            radius: 50,
-                            backgroundImage: CachedNetworkImageProvider(user.avatarUrl),
+                          Container(
+                            width: 100,
+                            height: 100,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.grey.shade200,
+                            ),
+                            child: ClipOval(
+                              child: CachedNetworkImage(
+                                imageUrl: user.avatarUrl,
+                                width: 100,
+                                height: 100,
+                                fit: BoxFit.cover,
+                                placeholder: (context, url) => const Center(
+                                  child: SizedBox(
+                                    width: 24,
+                                    height: 24,
+                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                  ),
+                                ),
+                                errorWidget: (context, url, error) => Image.network(
+                                  'https://api.dicebear.com/7.x/bottts/png?seed=${user.id.isNotEmpty ? user.id : user.username}',
+                                  width: 100,
+                                  height: 100,
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                            ),
                           ),
                           if (user.isVerified)
                             Positioned(
@@ -69,6 +94,33 @@ class ProfileScreen extends ConsumerWidget {
                       ],
                       const SizedBox(height: 2),
                       Text(user.email, style: const TextStyle(color: Colors.grey)),
+                      if (user.phoneNumber.isNotEmpty || user.city.isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 12,
+                          alignment: WrapAlignment.center,
+                          children: [
+                            if (user.city.isNotEmpty)
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.location_on_outlined, size: 16, color: Colors.grey),
+                                  const SizedBox(width: 4),
+                                  Text(user.city, style: const TextStyle(color: Colors.grey, fontSize: 13)),
+                                ],
+                              ),
+                            if (user.phoneNumber.isNotEmpty)
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.phone_outlined, size: 16, color: Colors.grey),
+                                  const SizedBox(width: 4),
+                                  Text(user.phoneNumber, style: const TextStyle(color: Colors.grey, fontSize: 13)),
+                                ],
+                              ),
+                          ],
+                        ),
+                      ],
                       const SizedBox(height: 16),
                       OutlinedButton.icon(
                         onPressed: () => context.push(AppRouter.editProfile),
