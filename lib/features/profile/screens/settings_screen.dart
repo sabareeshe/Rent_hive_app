@@ -25,30 +25,21 @@ class SettingsScreen extends ConsumerWidget {
                 title: 'Edit Profile',
                 onTap: () => context.push(AppRouter.editProfile),
               ),
-              _buildListTile(
-                icon: Icons.privacy_tip_outlined,
-                title: 'Privacy',
-                onTap: () {},
-              ),
               
               _buildSectionHeader('Preferences'),
               SwitchListTile(
                 secondary: const Icon(Icons.dark_mode_outlined),
                 title: const Text('Dark Mode'),
+                subtitle: const Text('Switch between light and dark themes'),
                 value: settings.isDarkMode,
                 onChanged: (val) {
                   ref.read(settingsProvider.notifier).toggleDarkMode(val);
                 },
               ),
-              _buildListTile(
-                icon: Icons.language,
-                title: 'Language',
-                trailing: Text(settings.language, style: const TextStyle(color: Colors.grey)),
-                onTap: () {},
-              ),
               SwitchListTile(
                 secondary: const Icon(Icons.notifications_outlined),
                 title: const Text('Push Notifications'),
+                subtitle: const Text('Receive rental updates and messages'),
                 value: settings.pushNotificationsEnabled,
                 onChanged: (val) {
                   final newSettings = settings.copyWith(pushNotificationsEnabled: val);
@@ -60,18 +51,8 @@ class SettingsScreen extends ConsumerWidget {
               _buildListTile(
                 icon: Icons.lock_outline,
                 title: 'Change Password',
-                onTap: () {},
+                onTap: () => _showChangePasswordDialog(context, ref),
               ),
-              _buildListTile(
-                icon: Icons.security,
-                title: 'Two-Factor Authentication',
-                onTap: () {},
-              ),
-
-              _buildSectionHeader('Support'),
-              _buildListTile(icon: Icons.help_outline, title: 'Help Center', onTap: () {}),
-              _buildListTile(icon: Icons.contact_support_outlined, title: 'Contact Support', onTap: () {}),
-              _buildListTile(icon: Icons.description_outlined, title: 'Terms & Conditions', onTap: () {}),
 
               const Divider(height: 32),
               
@@ -116,6 +97,102 @@ class SettingsScreen extends ConsumerWidget {
       title: Text(title),
       trailing: trailing ?? const Icon(Icons.chevron_right, color: Colors.grey),
       onTap: onTap,
+    );
+  }
+
+  void _showChangePasswordDialog(BuildContext context, WidgetRef ref) {
+    final passwordCtrl = TextEditingController();
+    final confirmCtrl = TextEditingController();
+    bool obscureNew = true;
+    bool obscureConfirm = true;
+    bool isUpdating = false;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          title: const Text('Change Password'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: passwordCtrl,
+                  obscureText: obscureNew,
+                  decoration: InputDecoration(
+                    labelText: 'New Password',
+                    suffixIcon: IconButton(
+                      icon: Icon(obscureNew ? Icons.visibility_off : Icons.visibility),
+                      onPressed: () => setDialogState(() => obscureNew = !obscureNew),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: confirmCtrl,
+                  obscureText: obscureConfirm,
+                  decoration: InputDecoration(
+                    labelText: 'Confirm Password',
+                    suffixIcon: IconButton(
+                      icon: Icon(obscureConfirm ? Icons.visibility_off : Icons.visibility),
+                      onPressed: () => setDialogState(() => obscureConfirm = !obscureConfirm),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: isUpdating
+                  ? null
+                  : () async {
+                      final newPass = passwordCtrl.text.trim();
+                      final confirmPass = confirmCtrl.text.trim();
+
+                      if (newPass.length < 6) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Password must be at least 6 characters')),
+                        );
+                        return;
+                      }
+
+                      if (newPass != confirmPass) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Passwords do not match')),
+                        );
+                        return;
+                      }
+
+                      setDialogState(() => isUpdating = true);
+                      try {
+                        await ref.read(profileRepositoryProvider).changePassword(newPass);
+                        if (context.mounted) {
+                          Navigator.pop(ctx);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Password updated successfully!')),
+                          );
+                        }
+                      } catch (e) {
+                        setDialogState(() => isUpdating = false);
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Failed to update password: $e')),
+                          );
+                        }
+                      }
+                    },
+              child: isUpdating
+                  ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                  : const Text('Update'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

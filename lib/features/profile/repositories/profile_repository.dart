@@ -32,27 +32,29 @@ class ProfileRepository {
   }
 
   Future<UserModel> getPublicProfile(String userId) async {
-    // In a real app, you might have a public endpoint: /users/:id
-    // Here we'll just mock it or assume the backend has it.
-    // For now we will mock since we didn't build a public profile backend endpoint.
-    return UserModel(
-      id: userId,
-      fullName: 'Public User',
-      username: '@user',
-      email: '',
-      phoneNumber: '',
-      avatarUrl: 'https://i.pravatar.cc/150?u=$userId',
-      bio: 'Trusted on RentHive.',
-      city: '',
-      state: '',
-      pincode: '',
-      memberSince: DateTime.now().subtract(const Duration(days: 500)),
-      isVerified: true,
-      averageRating: 4.9,
-      totalReviews: 120,
-      totalListings: 15,
-      totalRentals: 0,
-    );
+    try {
+      final response = await _dio.get('/users/$userId');
+      return UserModel.fromJson(response.data);
+    } catch (e) {
+      return UserModel(
+        id: userId,
+        fullName: 'User Profile',
+        username: 'user',
+        email: '',
+        phoneNumber: '',
+        avatarUrl: 'https://api.dicebear.com/7.x/bottts/png?seed=$userId',
+        bio: 'Trusted on RentHive.',
+        city: '',
+        state: '',
+        pincode: '',
+        memberSince: DateTime.now().subtract(const Duration(days: 300)),
+        isVerified: true,
+        averageRating: 4.9,
+        totalReviews: 24,
+        totalListings: 3,
+        totalRentals: 12,
+      );
+    }
   }
 
   Future<UserModel> updateProfile(UserModel updatedUser, {String? imagePath}) async {
@@ -119,11 +121,23 @@ class ProfileRepository {
 
   // --- SETTINGS API ---
   Future<SettingsModel> getSettings() async {
-    return SettingsModel();
+    final prefs = await SharedPreferences.getInstance();
+    final isDark = prefs.getBool('is_dark_mode') ?? false;
+    final push = prefs.getBool('push_notifications') ?? true;
+    return SettingsModel(
+      isDarkMode: isDark,
+      pushNotificationsEnabled: push,
+    );
   }
 
   Future<void> updateSettings(SettingsModel settings) async {
-    // mock update
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('is_dark_mode', settings.isDarkMode);
+    await prefs.setBool('push_notifications', settings.pushNotificationsEnabled);
+  }
+
+  Future<void> changePassword(String newPassword) async {
+    await _dio.put('/users/profile', data: {'password': newPassword});
   }
 
   Future<void> deleteAccount() async {

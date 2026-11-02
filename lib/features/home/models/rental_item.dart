@@ -32,8 +32,10 @@ class RentalItem {
       rating: (json['averageRating'] ?? 0).toDouble(),
       reviewsCount: json['totalReviews'] ?? 0,
       distance: 5.0, // Mock distance
-      ownerName: json['owner'] is Map ? json['owner']['name'] ?? 'Owner' : 'Owner',
-      ownerAvatar: json['owner'] is Map ? json['owner']['avatarUrl'] ?? 'https://i.pravatar.cc/150' : 'https://i.pravatar.cc/150',
+      ownerName: json['owner'] is Map ? (json['owner']['name'] ?? json['owner']['username'] ?? 'Owner') : 'Owner',
+      ownerAvatar: (json['owner'] is Map && (json['owner']['avatarUrl'] ?? '').toString().isNotEmpty && !(json['owner']['avatarUrl'] ?? '').toString().contains('pravatar.cc/150'))
+          ? json['owner']['avatarUrl']
+          : 'https://api.dicebear.com/7.x/bottts/png?seed=${json['owner'] is Map ? (json['owner']['_id'] ?? json['owner']['username'] ?? 'owner') : 'owner'}',
       category: json['category'] ?? '',
     );
   }

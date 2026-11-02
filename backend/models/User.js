@@ -32,7 +32,7 @@ const userSchema = new mongoose.Schema(
     bio: String,
     avatarUrl: {
       type: String,
-      default: 'https://i.pravatar.cc/150',
+      default: 'https://api.dicebear.com/7.x/bottts/png?seed=renthive',
     },
     role: {
       type: String,

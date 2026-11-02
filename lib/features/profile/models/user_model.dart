@@ -67,13 +67,22 @@ class UserModel {
   }
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
+    final id = json['_id'] ?? '';
+    var rawAvatar = json['avatarUrl']?.toString() ?? '';
+    if (rawAvatar.startsWith('/')) {
+      rawAvatar = 'https://rent-hive-app.onrender.com$rawAvatar';
+    }
+    final stableAvatar = (rawAvatar.isNotEmpty && !rawAvatar.contains('pravatar.cc/150'))
+        ? rawAvatar
+        : 'https://api.dicebear.com/7.x/bottts/png?seed=${id.isNotEmpty ? id : 'renthive'}';
+
     return UserModel(
-      id: json['_id'] ?? '',
+      id: id,
       fullName: json['name'] ?? '',
       username: json['username'] ?? '',
       email: json['email'] ?? '',
       phoneNumber: json['phone'] ?? '',
-      avatarUrl: json['avatarUrl'] ?? 'https://i.pravatar.cc/150',
+      avatarUrl: stableAvatar,
       bio: json['bio'] ?? '',
       city: json['city'] ?? '',
       state: json['state'] ?? '',
@@ -96,6 +105,7 @@ class UserModel {
       'city': city,
       'state': state,
       'pincode': pincode,
+      'avatarUrl': avatarUrl,
     };
   }
 }

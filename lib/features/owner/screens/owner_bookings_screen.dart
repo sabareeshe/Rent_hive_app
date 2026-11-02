@@ -76,13 +76,13 @@ class _OwnerBookingsScreenState extends State<OwnerBookingsScreen> with SingleTi
                     Row(
                       children: [
                         CircleAvatar(
-                          backgroundImage: NetworkImage('https://i.pravatar.cc/150?u=renter_$index'),
+                          backgroundImage: NetworkImage('https://api.dicebear.com/7.x/bottts/png?seed=renter_$index'),
                         ),
                         const SizedBox(width: 12),
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Renter Name $index', style: const TextStyle(fontWeight: FontWeight.bold)),
+                            Text('Renter #$index', style: const TextStyle(fontWeight: FontWeight.bold)),
                             const Text('Requesting: Premium Tent', style: TextStyle(color: Colors.grey, fontSize: 13)),
                           ],
                         ),

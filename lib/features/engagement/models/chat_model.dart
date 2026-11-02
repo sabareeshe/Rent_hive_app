@@ -54,8 +54,10 @@ class ConversationModel {
     return ConversationModel(
       id: json['_id'] ?? '',
       otherUserId: otherUser['_id'] ?? '',
-      otherUserName: otherUser['name'] ?? 'User',
-      otherUserAvatar: otherUser['avatarUrl'] ?? 'https://i.pravatar.cc/150',
+      otherUserName: otherUser['name'] ?? otherUser['username'] ?? 'User',
+      otherUserAvatar: (otherUser['avatarUrl'] != null && (otherUser['avatarUrl'] as String).isNotEmpty && !(otherUser['avatarUrl'] as String).contains('pravatar.cc/150'))
+          ? otherUser['avatarUrl']
+          : 'https://api.dicebear.com/7.x/bottts/png?seed=${otherUser['_id'] ?? "chat_user"}',
       lastMessage: json['lastMessage'] != null ? MessageModel(
         id: '', senderId: '', text: json['lastMessage'], timestamp: DateTime.now()
       ) : null,

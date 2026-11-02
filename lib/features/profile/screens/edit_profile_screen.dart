@@ -1,6 +1,10 @@
+import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../providers/profile_provider.dart';
 
 class EditProfileScreen extends ConsumerStatefulWidget {
@@ -12,51 +16,170 @@ class EditProfileScreen extends ConsumerStatefulWidget {
 
 class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _picker = ImagePicker();
+
   late TextEditingController _nameCtrl;
+  late TextEditingController _usernameCtrl;
   late TextEditingController _bioCtrl;
   late TextEditingController _cityCtrl;
   late TextEditingController _phoneCtrl;
-  
+
+  bool _initialized = false;
   bool _isSaving = false;
+  String? _pickedImagePath;
+  String? _selectedAvatarUrl;
+
+  final List<String> _presetAvatars = [
+    'https://api.dicebear.com/7.x/bottts/png?seed=Felix',
+    'https://api.dicebear.com/7.x/bottts/png?seed=Bella',
+    'https://api.dicebear.com/7.x/bottts/png?seed=Charlie',
+    'https://api.dicebear.com/7.x/bottts/png?seed=Luna',
+    'https://api.dicebear.com/7.x/bottts/png?seed=Milo',
+    'https://api.dicebear.com/7.x/bottts/png?seed=Rocky',
+  ];
 
   @override
   void initState() {
     super.initState();
     _nameCtrl = TextEditingController();
+    _usernameCtrl = TextEditingController();
     _bioCtrl = TextEditingController();
     _cityCtrl = TextEditingController();
     _phoneCtrl = TextEditingController();
-    
-    // Defer reading state until build to setup initial values
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final userState = ref.read(currentUserProvider);
-      if (userState.value != null) {
-        _nameCtrl.text = userState.value!.fullName;
-        _bioCtrl.text = userState.value!.bio;
-        _cityCtrl.text = userState.value!.city;
-        _phoneCtrl.text = userState.value!.phoneNumber;
+  }
+
+  void _populateUserData(dynamic user) {
+    if (_initialized || user == null) return;
+    _nameCtrl.text = user.fullName;
+    _usernameCtrl.text = user.username;
+    _bioCtrl.text = user.bio;
+    _cityCtrl.text = user.city;
+    _phoneCtrl.text = user.phoneNumber;
+    _selectedAvatarUrl = user.avatarUrl;
+    _initialized = true;
+  }
+
+  @override
+  void dispose() {
+    _nameCtrl.dispose();
+    _usernameCtrl.dispose();
+    _bioCtrl.dispose();
+    _cityCtrl.dispose();
+    _phoneCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickImage(ImageSource source) async {
+    Navigator.pop(context);
+    try {
+      final XFile? image = await _picker.pickImage(source: source, imageQuality: 80);
+      if (image != null) {
+        setState(() {
+          _pickedImagePath = image.path;
+          _selectedAvatarUrl = null;
+        });
       }
-    });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to pick image: $e')),
+        );
+      }
+    }
+  }
+
+  void _showAvatarOptions() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Change Profile Photo',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+              ListTile(
+                leading: const Icon(Icons.photo_library_outlined, color: Colors.blue),
+                title: const Text('Choose from Gallery'),
+                onTap: () => _pickImage(ImageSource.gallery),
+              ),
+              ListTile(
+                leading: const Icon(Icons.camera_alt_outlined, color: Colors.green),
+                title: const Text('Take a Photo'),
+                onTap: () => _pickImage(ImageSource.camera),
+              ),
+              const Divider(height: 24),
+              const Text('Or Choose an Avatar Style:', style: TextStyle(fontWeight: FontWeight.w600)),
+              const SizedBox(height: 12),
+              SizedBox(
+                height: 60,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: _presetAvatars.length,
+                  separatorBuilder: (context, index) => const SizedBox(width: 12),
+                  itemBuilder: (context, idx) {
+                    final avatar = _presetAvatars[idx];
+                    return GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          _selectedAvatarUrl = avatar;
+                          _pickedImagePath = null;
+                        });
+                        Navigator.pop(ctx);
+                      },
+                      child: CircleAvatar(
+                        radius: 28,
+                        backgroundColor: Colors.grey.shade200,
+                        backgroundImage: CachedNetworkImageProvider(avatar),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
-    
+
     setState(() => _isSaving = true);
-    
+
     try {
       final currentUser = ref.read(currentUserProvider).value;
       if (currentUser != null) {
         final updatedUser = currentUser.copyWith(
-          fullName: _nameCtrl.text,
-          bio: _bioCtrl.text,
-          city: _cityCtrl.text,
-          phoneNumber: _phoneCtrl.text,
+          fullName: _nameCtrl.text.trim(),
+          username: _usernameCtrl.text.trim(),
+          phoneNumber: _phoneCtrl.text.trim(),
+          city: _cityCtrl.text.trim(),
+          bio: _bioCtrl.text.trim(),
+          avatarUrl: _selectedAvatarUrl,
         );
-        
-        await ref.read(currentUserProvider.notifier).updateProfile(updatedUser);
+
+        await ref.read(currentUserProvider.notifier).updateProfile(
+              updatedUser,
+              imagePath: _pickedImagePath,
+            );
       }
-      if (mounted) context.pop();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Profile updated successfully!')),
+        );
+        context.pop();
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -70,10 +193,26 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     }
   }
 
+  ImageProvider _getAvatarImage(String defaultUrl) {
+    if (_pickedImagePath != null) {
+      if (kIsWeb) {
+        return NetworkImage(_pickedImagePath!);
+      } else {
+        return FileImage(File(_pickedImagePath!));
+      }
+    }
+    final url = (_selectedAvatarUrl?.isNotEmpty ?? false) ? _selectedAvatarUrl! : defaultUrl;
+    return CachedNetworkImageProvider(url);
+  }
+
   @override
   Widget build(BuildContext context) {
     final user = ref.watch(currentUserProvider).value;
-    final avatarUrl = (user?.avatarUrl.isNotEmpty ?? false) ? user!.avatarUrl : 'https://i.pravatar.cc/150';
+    _populateUserData(user);
+
+    final defaultAvatar = (user?.avatarUrl.isNotEmpty ?? false)
+        ? user!.avatarUrl
+        : 'https://api.dicebear.com/7.x/bottts/png?seed=${user?.id ?? "user"}';
 
     return Scaffold(
       appBar: AppBar(
@@ -84,7 +223,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           else
             TextButton(
               onPressed: _save,
-              child: const Text('Save'),
+              child: const Text('Save', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
             )
         ],
       ),
@@ -97,17 +236,23 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               child: Stack(
                 children: [
                   CircleAvatar(
-                    radius: 50,
-                    backgroundImage: NetworkImage(avatarUrl),
+                    radius: 54,
+                    backgroundColor: Colors.grey.shade200,
+                    backgroundImage: _getAvatarImage(defaultAvatar),
                   ),
                   Positioned(
                     bottom: 0,
                     right: 0,
                     child: Container(
-                      decoration: const BoxDecoration(color: Colors.blue, shape: BoxShape.circle),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.primary,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 2),
+                      ),
                       child: IconButton(
                         icon: const Icon(Icons.camera_alt, color: Colors.white, size: 20),
-                        onPressed: () {},
+                        onPressed: _showAvatarOptions,
+                        tooltip: 'Change Photo',
                       ),
                     ),
                   )
@@ -117,23 +262,48 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             const SizedBox(height: 32),
             TextFormField(
               controller: _nameCtrl,
-              decoration: const InputDecoration(labelText: 'Full Name'),
-              validator: (v) => v!.isEmpty ? 'Required' : null,
+              decoration: const InputDecoration(
+                labelText: 'Full Name',
+                prefixIcon: Icon(Icons.person_outline),
+              ),
+              validator: (v) => (v == null || v.trim().isEmpty) ? 'Full Name is required' : null,
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _usernameCtrl,
+              decoration: const InputDecoration(
+                labelText: 'Username',
+                prefixIcon: Icon(Icons.alternate_email),
+              ),
+              validator: (v) => (v == null || v.trim().isEmpty) ? 'Username is required' : null,
             ),
             const SizedBox(height: 16),
             TextFormField(
               controller: _phoneCtrl,
-              decoration: const InputDecoration(labelText: 'Phone Number'),
+              keyboardType: TextInputType.phone,
+              decoration: const InputDecoration(
+                labelText: 'Phone Number',
+                prefixIcon: Icon(Icons.phone_outlined),
+                hintText: '+1 234 567 8900',
+              ),
             ),
             const SizedBox(height: 16),
             TextFormField(
               controller: _cityCtrl,
-              decoration: const InputDecoration(labelText: 'City'),
+              decoration: const InputDecoration(
+                labelText: 'City / Location',
+                prefixIcon: Icon(Icons.location_on_outlined),
+                hintText: 'e.g. San Francisco, CA',
+              ),
             ),
             const SizedBox(height: 16),
             TextFormField(
               controller: _bioCtrl,
-              decoration: const InputDecoration(labelText: 'Bio'),
+              decoration: const InputDecoration(
+                labelText: 'Bio',
+                prefixIcon: Icon(Icons.description_outlined),
+                hintText: 'Tell others about yourself...',
+              ),
               maxLines: 4,
             ),
           ],

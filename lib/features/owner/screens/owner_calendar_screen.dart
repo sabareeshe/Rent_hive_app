@@ -96,7 +96,7 @@ class _OwnerCalendarScreenState extends State<OwnerCalendarScreen> {
                     child: ListTile(
                       leading: const Icon(Icons.event_busy, color: Colors.red),
                       title: const Text('Booked: Sony A7III Camera', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red)),
-                      subtitle: const Text('Rented to Alice Smith'),
+                      subtitle: const Text('Active Reservation'),
                       trailing: TextButton(onPressed: () {}, child: const Text('Details')),
                     ),
                   )

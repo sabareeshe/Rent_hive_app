@@ -26,8 +26,10 @@ class ReviewModel {
       id: json['_id'] ?? '',
       targetId: json['item'] ?? json['targetUser'] ?? '',
       reviewerId: json['author'] is Map ? json['author']['_id'] ?? '' : json['author'] ?? '',
-      reviewerName: json['author'] is Map ? json['author']['name'] ?? 'User' : 'User',
-      reviewerAvatar: json['author'] is Map ? json['author']['avatarUrl'] ?? 'https://i.pravatar.cc/150' : 'https://i.pravatar.cc/150',
+      reviewerName: json['author'] is Map ? (json['author']['name'] ?? json['author']['username'] ?? 'User') : 'User',
+      reviewerAvatar: (json['author'] is Map && (json['author']['avatarUrl'] ?? '').toString().isNotEmpty && !(json['author']['avatarUrl'] ?? '').toString().contains('pravatar.cc/150'))
+          ? json['author']['avatarUrl']
+          : 'https://api.dicebear.com/7.x/bottts/png?seed=${json['author'] is Map ? (json['author']['_id'] ?? 'user') : 'user'}',
       rating: (json['rating'] ?? 0).toDouble(),
       comment: json['comment'] ?? '',
       timestamp: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : DateTime.now(),

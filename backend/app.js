@@ -27,6 +27,9 @@ try {
   console.log('Swagger documentation not found or invalid. Skipping /api-docs setup.');
 }
 
+// Static uploads folder
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 // Routes
 app.get('/', (req, res) => {
   res.send('RentHive API is running...');

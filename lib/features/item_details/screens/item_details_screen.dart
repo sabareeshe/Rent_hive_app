@@ -200,7 +200,11 @@ class _ItemDetailsScreenState extends ConsumerState<ItemDetailsScreen> {
         children: [
           CircleAvatar(
             radius: 28,
-            backgroundImage: CachedNetworkImageProvider('https://i.pravatar.cc/150?u=${item.ownerName.replaceAll(' ', '')}'),
+            backgroundImage: CachedNetworkImageProvider(
+              (item.ownerAvatar.isNotEmpty && !item.ownerAvatar.contains('pravatar.cc/150'))
+                  ? item.ownerAvatar
+                  : 'https://api.dicebear.com/7.x/bottts/png?seed=${item.ownerName.replaceAll(' ', '')}',
+            ),
           ),
           const SizedBox(width: 16),
           Expanded(

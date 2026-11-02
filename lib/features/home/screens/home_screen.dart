@@ -40,11 +40,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     final userAsyncValue = ref.watch(currentUserProvider);
                     final user = userAsyncValue.value;
                     
-                    final firstName = user?.fullName.split(' ').first ?? 'User';
-                    final location = (user != null && user.city.isNotEmpty && user.state.isNotEmpty) 
-                        ? '${user.city}, ${user.state}' 
+                    final displayName = (user != null && user.username.isNotEmpty)
+                        ? user.username
+                        : ((user?.fullName.isNotEmpty ?? false) ? user!.fullName.split(' ').first : 'User');
+                    final location = (user != null && user.city.isNotEmpty) 
+                        ? (user.state.isNotEmpty ? '${user.city}, ${user.state}' : user.city)
                         : 'Set Location';
-                    final avatarUrl = user?.avatarUrl ?? 'https://i.pravatar.cc/150';
+                    final avatarUrl = (user != null && user.avatarUrl.isNotEmpty && !user.avatarUrl.contains('pravatar.cc/150'))
+                        ? user.avatarUrl
+                        : 'https://api.dicebear.com/7.x/bottts/png?seed=${user?.id.isNotEmpty == true ? user!.id : "renthive_user"}';
 
                     return Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -54,7 +58,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Hello, $firstName 👋',
+                                'Hello, $displayName 👋',
                                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
                                       fontWeight: FontWeight.bold,
                                     ),

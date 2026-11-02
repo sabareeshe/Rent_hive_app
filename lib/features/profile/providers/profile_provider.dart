@@ -19,14 +19,15 @@ class CurrentUserNotifier extends AsyncNotifier<UserModel> {
     return repo.getCurrentUser();
   }
 
-  Future<void> updateProfile(UserModel updatedUser) async {
+  Future<void> updateProfile(UserModel updatedUser, {String? imagePath}) async {
     final repo = ref.read(profileRepositoryProvider);
     state = const AsyncLoading();
     try {
-      final user = await repo.updateProfile(updatedUser);
+      final user = await repo.updateProfile(updatedUser, imagePath: imagePath);
       state = AsyncData(user);
     } catch (e, st) {
       state = AsyncError(e, st);
+      rethrow;
     }
   }
 }

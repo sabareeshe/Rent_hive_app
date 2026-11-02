@@ -86,8 +86,12 @@ class OwnerDashboardScreen extends ConsumerWidget {
 
   Widget _buildWelcomeHeader(WidgetRef ref) {
     final user = ref.watch(currentUserProvider).value;
-    final name = (user?.fullName.isNotEmpty ?? false) ? user!.fullName : 'Owner';
-    final avatar = (user?.avatarUrl.isNotEmpty ?? false) ? user!.avatarUrl : 'https://i.pravatar.cc/150';
+    final name = (user != null && user.username.isNotEmpty)
+        ? user.username
+        : ((user?.fullName.isNotEmpty ?? false) ? user!.fullName : 'Owner');
+    final avatar = (user != null && user.avatarUrl.isNotEmpty && !user.avatarUrl.contains('pravatar.cc/150'))
+        ? user.avatarUrl
+        : 'https://api.dicebear.com/7.x/bottts/png?seed=${user?.id.isNotEmpty == true ? user!.id : "renthive_owner"}';
 
     return Row(
       children: [

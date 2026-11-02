@@ -56,6 +56,18 @@ class ProfileScreen extends ConsumerWidget {
                       ),
                       const SizedBox(height: 12),
                       Text(user.fullName, style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
+                      if (user.username.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          '@${user.username}',
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.primary,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 15,
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 2),
                       Text(user.email, style: const TextStyle(color: Colors.grey)),
                       const SizedBox(height: 16),
                       OutlinedButton.icon(
@@ -90,9 +102,19 @@ class ProfileScreen extends ConsumerWidget {
                     children: [
                       const Text('About', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
                       const SizedBox(height: 8),
-                      Text(user.bio, style: const TextStyle(color: Colors.grey, height: 1.5)),
+                      Text(
+                        user.bio.isNotEmpty ? user.bio : 'No bio added yet.',
+                        style: const TextStyle(color: Colors.grey, height: 1.5),
+                      ),
                       const SizedBox(height: 16),
-                      _buildInfoRow(Icons.location_on_outlined, '${user.city}, ${user.state}'),
+                      if (user.phoneNumber.isNotEmpty)
+                        _buildInfoRow(Icons.phone_outlined, user.phoneNumber),
+                      _buildInfoRow(
+                        Icons.location_on_outlined,
+                        (user.city.isNotEmpty || user.state.isNotEmpty)
+                            ? '${user.city}${user.city.isNotEmpty && user.state.isNotEmpty ? ', ' : ''}${user.state}'
+                            : 'Location not set',
+                      ),
                       _buildInfoRow(Icons.calendar_today_outlined, 'Joined ${user.memberSince.year}'),
                     ],
                   ),
