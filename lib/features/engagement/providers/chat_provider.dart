@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/chat_model.dart';
 import 'wishlist_provider.dart';
+import '../../profile/providers/profile_provider.dart';
 
 final conversationsProvider = AsyncNotifierProvider<ConversationsNotifier, List<ConversationModel>>(() {
   return ConversationsNotifier();
@@ -10,7 +11,9 @@ class ConversationsNotifier extends AsyncNotifier<List<ConversationModel>> {
   @override
   Future<List<ConversationModel>> build() async {
     final repo = ref.read(engagementRepositoryProvider);
-    return repo.getConversations('user123'); // Mocking current user ID
+    final user = ref.watch(currentUserProvider).value;
+    final currentUserId = user?.id ?? '';
+    return repo.getConversations(currentUserId);
   }
 }
 
@@ -47,10 +50,12 @@ class ChatMessagesNotifier extends AsyncNotifier<List<MessageModel>> {
     if (id == null) return;
     
     final repo = ref.read(engagementRepositoryProvider);
+    final user = ref.read(currentUserProvider).value;
+    final currentUserId = user?.id ?? 'user_me';
     
     final tempMsg = MessageModel(
       id: 'temp_${DateTime.now().millisecondsSinceEpoch}',
-      senderId: 'user123',
+      senderId: currentUserId,
       text: text,
       imageUrl: imageUrl,
       timestamp: DateTime.now(),

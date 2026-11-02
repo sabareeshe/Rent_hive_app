@@ -125,4 +125,8 @@ class ProfileRepository {
   Future<void> updateSettings(SettingsModel settings) async {
     // mock update
   }
+
+  Future<void> deleteAccount() async {
+    await _dio.delete('/users/profile');
+  }
 }

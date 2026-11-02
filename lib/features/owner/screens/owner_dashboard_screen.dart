@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../providers/owner_providers.dart';
+import '../../profile/providers/profile_provider.dart';
 
 class OwnerDashboardScreen extends ConsumerWidget {
   const OwnerDashboardScreen({super.key});
@@ -36,7 +37,7 @@ class OwnerDashboardScreen extends ConsumerWidget {
             child: ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                _buildWelcomeHeader(),
+                _buildWelcomeHeader(ref),
                 const SizedBox(height: 24),
                 _buildSectionTitle('Overview'),
                 const SizedBox(height: 16),
@@ -83,19 +84,23 @@ class OwnerDashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildWelcomeHeader() {
+  Widget _buildWelcomeHeader(WidgetRef ref) {
+    final user = ref.watch(currentUserProvider).value;
+    final name = (user?.fullName.isNotEmpty ?? false) ? user!.fullName : 'Owner';
+    final avatar = (user?.avatarUrl.isNotEmpty ?? false) ? user!.avatarUrl : 'https://i.pravatar.cc/150';
+
     return Row(
       children: [
-        const CircleAvatar(
+        CircleAvatar(
           radius: 30,
-          backgroundImage: NetworkImage('https://i.pravatar.cc/150?u=owner_123'),
+          backgroundImage: NetworkImage(avatar),
         ),
         const SizedBox(width: 16),
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: const [
-            Text('Welcome back,', style: TextStyle(color: Colors.grey, fontSize: 14)),
-            Text('Mohan Kumar', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
+          children: [
+            const Text('Welcome back,', style: TextStyle(color: Colors.grey, fontSize: 14)),
+            Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
           ],
         ),
       ],

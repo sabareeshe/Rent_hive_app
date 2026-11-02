@@ -59,8 +59,12 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     final prefs = await SharedPreferences.getInstance();
     final hasSeenOnboarding = prefs.getBool('has_seen_onboarding') ?? false;
     
-    final authState = ref.read(authProvider);
-    final isLoggedIn = authState.value ?? false;
+    bool isLoggedIn = false;
+    try {
+      isLoggedIn = await ref.read(authProvider.future);
+    } catch (_) {
+      isLoggedIn = false;
+    }
 
     if (mounted) {
       if (!hasSeenOnboarding) {

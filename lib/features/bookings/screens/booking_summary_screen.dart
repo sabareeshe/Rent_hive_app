@@ -154,7 +154,9 @@ class _BookingSummaryScreenState extends ConsumerState<BookingSummaryScreen> {
                 ClipRRect(
                   borderRadius: BorderRadius.circular(12),
                   child: CachedNetworkImage(
-                    imageUrl: item.images.first,
+                    imageUrl: item.images.isNotEmpty
+                        ? item.images.first
+                        : 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?q=80&w=300&auto=format&fit=crop',
                     width: 100,
                     height: 100,
                     fit: BoxFit.cover,

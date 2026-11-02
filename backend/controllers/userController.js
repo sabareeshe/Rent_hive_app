@@ -44,15 +44,10 @@ const updateUserProfile = async (req, res, next) => {
       }
 
       const updatedUser = await user.save();
+      const userObj = updatedUser.toObject();
+      delete userObj.password;
 
-      res.json({
-        _id: updatedUser._id,
-        name: updatedUser.name,
-        username: updatedUser.username,
-        email: updatedUser.email,
-        avatarUrl: updatedUser.avatarUrl,
-        role: updatedUser.role,
-      });
+      res.json(userObj);
     } else {
       res.status(404);
       throw new Error('User not found');

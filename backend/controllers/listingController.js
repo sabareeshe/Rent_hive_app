@@ -5,12 +5,17 @@ const Listing = require('../models/Listing');
 // @access  Public
 const getListings = async (req, res, next) => {
   try {
-    const { keyword, category, condition, sort } = req.query;
+    const { keyword, search, category, condition, sort } = req.query;
+    const searchTerm = keyword || search;
 
     const query = {};
 
-    if (keyword) {
-      query.$text = { $search: keyword };
+    if (searchTerm) {
+      query.$or = [
+        { title: { $regex: searchTerm, $options: 'i' } },
+        { description: { $regex: searchTerm, $options: 'i' } },
+        { category: { $regex: searchTerm, $options: 'i' } },
+      ];
     }
 
     if (category && category !== 'All') {
@@ -78,22 +83,56 @@ const getListingById = async (req, res, next) => {
 // @access  Private (Owner)
 const createListing = async (req, res, next) => {
   try {
-    const { title, category, description, condition, dailyRate, securityDeposit, address } = req.body;
+    let body = req.body;
+    if (req.body.data) {
+      try {
+        body = typeof req.body.data === 'string' ? JSON.parse(req.body.data) : req.body.data;
+      } catch (e) {
+        body = req.body;
+      }
+    }
 
-    const images = req.files ? req.files.map((file) => file.path) : [];
+    const {
+      title,
+      category,
+      description,
+      condition,
+      dailyRate,
+      securityDeposit,
+      address,
+      rates,
+      location,
+    } = body;
+
+    const rateDaily = (rates && rates.daily !== undefined) ? rates.daily : dailyRate;
+    const rateWeekly = (rates && rates.weekly !== undefined) ? rates.weekly : body.weeklyRate;
+    const rateMonthly = (rates && rates.monthly !== undefined) ? rates.monthly : body.monthlyRate;
+
+    const images = req.files && req.files.length > 0
+      ? req.files.map((file) => file.path)
+      : (body.images && body.images.length > 0 ? body.images : ['https://via.placeholder.com/400']);
+
+    const loc = location || {
+      address: address || body.pickupAddress || '',
+      city: body.city || '',
+      state: body.state || '',
+      coordinates: [0, 0],
+    };
 
     const listing = new Listing({
       owner: req.user._id,
       title,
       category,
       description,
-      condition,
+      condition: condition || 'Good',
       rates: {
-        daily: dailyRate,
+        daily: rateDaily,
+        weekly: rateWeekly,
+        monthly: rateMonthly,
       },
-      securityDeposit,
-      images: images.length > 0 ? images : ['https://via.placeholder.com/400'], // fallback
-      address,
+      securityDeposit: securityDeposit || 0,
+      images,
+      location: loc,
     });
 
     const createdListing = await listing.save();
@@ -116,20 +155,51 @@ const updateListing = async (req, res, next) => {
         throw new Error('Not authorized to update this listing');
       }
 
-      listing.title = req.body.title || listing.title;
-      listing.category = req.body.category || listing.category;
-      listing.description = req.body.description || listing.description;
-      listing.condition = req.body.condition || listing.condition;
+      let body = req.body;
+      if (req.body.data) {
+        try {
+          body = typeof req.body.data === 'string' ? JSON.parse(req.body.data) : req.body.data;
+        } catch (e) {
+          body = req.body;
+        }
+      }
+
+      listing.title = body.title || listing.title;
+      listing.category = body.category || listing.category;
+      listing.description = body.description || listing.description;
+      listing.condition = body.condition || listing.condition;
       
-      if (req.body.dailyRate) {
-        listing.rates.daily = req.body.dailyRate;
+      const rateDaily = (body.rates && body.rates.daily !== undefined) ? body.rates.daily : body.dailyRate;
+      if (rateDaily !== undefined) {
+        listing.rates.daily = rateDaily;
+      }
+      if (body.rates?.weekly !== undefined || body.weeklyRate !== undefined) {
+        listing.rates.weekly = body.rates?.weekly ?? body.weeklyRate;
+      }
+      if (body.rates?.monthly !== undefined || body.monthlyRate !== undefined) {
+        listing.rates.monthly = body.rates?.monthly ?? body.monthlyRate;
       }
       
-      listing.securityDeposit = req.body.securityDeposit || listing.securityDeposit;
-      listing.status = req.body.status || listing.status;
+      if (body.securityDeposit !== undefined) {
+        listing.securityDeposit = body.securityDeposit;
+      }
+      listing.status = body.status || listing.status;
+
+      if (body.location) {
+        listing.location = { ...listing.location, ...body.location };
+      } else if (body.pickupAddress || body.city || body.state) {
+        listing.location = {
+          ...listing.location,
+          address: body.pickupAddress || listing.location?.address,
+          city: body.city || listing.location?.city,
+          state: body.state || listing.location?.state,
+        };
+      }
 
       if (req.files && req.files.length > 0) {
         listing.images = req.files.map((file) => file.path);
+      } else if (body.images && body.images.length > 0) {
+        listing.images = body.images;
       }
 
       const updatedListing = await listing.save();

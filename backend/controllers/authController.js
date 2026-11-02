@@ -15,17 +15,24 @@ const generateToken = (id) => {
 const registerUser = async (req, res, next) => {
   try {
     const { name, username, email, password, role } = req.body;
+    const cleanEmail = email ? email.toLowerCase().trim() : '';
+    let finalUsername = username ? username.toLowerCase().trim() : (cleanEmail.split('@')[0] || 'user');
 
-    const userExists = await User.findOne({ $or: [{ email }, { username }] });
-    if (userExists) {
+    const emailExists = await User.findOne({ email: cleanEmail });
+    if (emailExists) {
       res.status(400);
-      throw new Error('User with email or username already exists');
+      throw new Error('User with this email already exists');
+    }
+
+    const usernameExists = await User.findOne({ username: finalUsername });
+    if (usernameExists) {
+      finalUsername = `${finalUsername}_${Math.floor(1000 + Math.random() * 9000)}`;
     }
 
     const user = await User.create({
       name,
-      username,
-      email,
+      username: finalUsername,
+      email: cleanEmail,
       password,
       role: role || 'renter',
     });
@@ -54,8 +61,9 @@ const registerUser = async (req, res, next) => {
 const loginUser = async (req, res, next) => {
   try {
     const { email, password } = req.body;
+    const cleanEmail = email ? email.toLowerCase().trim() : '';
 
-    const user = await User.findOne({ email }).select('+password');
+    const user = await User.findOne({ email: cleanEmail }).select('+password');
 
     if (user && (await user.matchPassword(password))) {
       res.json({

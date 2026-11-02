@@ -33,7 +33,11 @@ class RentalItemCard extends StatelessWidget {
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(16),
                       image: DecorationImage(
-                        image: CachedNetworkImageProvider(item.images.first),
+                        image: CachedNetworkImageProvider(
+                          item.images.isNotEmpty
+                              ? item.images.first
+                              : 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?q=80&w=600&auto=format&fit=crop',
+                        ),
                         fit: BoxFit.cover,
                       ),
                     ),

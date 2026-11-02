@@ -120,7 +120,7 @@ class AppRouter {
         path: itemDetails,
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) {
-          final itemId = state.uri.queryParameters['itemId']!;
+          final itemId = state.uri.queryParameters['itemId'] ?? '';
           return ItemDetailsScreen(itemId: itemId);
         },
       ),
@@ -128,7 +128,7 @@ class AppRouter {
         path: bookingCalendar,
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) {
-          final itemId = state.uri.queryParameters['itemId']!;
+          final itemId = state.uri.queryParameters['itemId'] ?? '';
           return BookingCalendarScreen(itemId: itemId);
         },
       ),
@@ -136,9 +136,11 @@ class AppRouter {
         path: bookingSummary,
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) {
-          final itemId = state.uri.queryParameters['itemId']!;
-          final start = DateTime.parse(state.uri.queryParameters['start']!);
-          final end = DateTime.parse(state.uri.queryParameters['end']!);
+          final itemId = state.uri.queryParameters['itemId'] ?? '';
+          final startStr = state.uri.queryParameters['start'];
+          final endStr = state.uri.queryParameters['end'];
+          final start = startStr != null ? (DateTime.tryParse(startStr) ?? DateTime.now()) : DateTime.now();
+          final end = endStr != null ? (DateTime.tryParse(endStr) ?? DateTime.now().add(const Duration(days: 1))) : DateTime.now().add(const Duration(days: 1));
           return BookingSummaryScreen(itemId: itemId, startDate: start, endDate: end);
         },
       ),
@@ -146,7 +148,7 @@ class AppRouter {
         path: bookingConfirmation,
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) {
-          final bookingId = state.uri.queryParameters['bookingId']!;
+          final bookingId = state.uri.queryParameters['bookingId'] ?? '';
           return BookingConfirmationScreen(bookingId: bookingId);
         },
       ),
@@ -154,7 +156,7 @@ class AppRouter {
         path: bookingDetails,
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) {
-          final id = state.uri.queryParameters['id']!;
+          final id = state.uri.queryParameters['id'] ?? '';
           return BookingDetailsScreen(bookingId: id);
         },
       ),
@@ -177,8 +179,8 @@ class AppRouter {
         path: chat,
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) {
-          final id = state.uri.queryParameters['id']!;
-          final name = state.uri.queryParameters['name']!;
+          final id = state.uri.queryParameters['id'] ?? '';
+          final name = state.uri.queryParameters['name'] ?? 'User';
           return ChatScreen(conversationId: id, otherUserName: name);
         },
       ),
@@ -196,7 +198,7 @@ class AppRouter {
         path: publicProfile,
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) {
-          final id = state.uri.queryParameters['id']!;
+          final id = state.uri.queryParameters['id'] ?? '';
           return PublicProfileScreen(userId: id);
         },
       ),
@@ -204,7 +206,7 @@ class AppRouter {
         path: writeReview,
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) {
-          final targetId = state.uri.queryParameters['targetId']!;
+          final targetId = state.uri.queryParameters['targetId'] ?? '';
           return WriteReviewScreen(targetId: targetId);
         },
       ),
@@ -212,7 +214,7 @@ class AppRouter {
         path: reviewsList,
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) {
-          final targetId = state.uri.queryParameters['targetId']!;
+          final targetId = state.uri.queryParameters['targetId'] ?? '';
           return ReviewsListScreen(targetId: targetId);
         },
       ),

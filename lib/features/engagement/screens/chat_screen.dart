@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/chat_provider.dart';
+import '../../profile/providers/profile_provider.dart';
 import '../../../core/theme/app_colors.dart';
 
 class ChatScreen extends ConsumerStatefulWidget {
@@ -39,6 +40,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     final messagesState = ref.watch(chatMessagesProvider);
+    final currentUser = ref.watch(currentUserProvider).value;
+    final currentUserId = currentUser?.id ?? '';
 
     return Scaffold(
       appBar: AppBar(
@@ -69,7 +72,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   itemCount: messages.length,
                   itemBuilder: (context, index) {
                     final msg = messages[messages.length - 1 - index];
-                    final isMe = msg.senderId == 'user123';
+                    final isMe = msg.senderId == currentUserId || msg.senderId == 'user_me' || msg.senderId == 'user123';
 
                     return Align(
                       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,

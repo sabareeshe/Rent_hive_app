@@ -28,11 +28,13 @@ const addToWishlist = async (req, res, next) => {
       wishlist = await Wishlist.create({ user: req.user._id, items: [] });
     }
 
-    if (!wishlist.items.includes(req.params.itemId)) {
+    const alreadyAdded = wishlist.items.some((item) => item.toString() === req.params.itemId);
+    if (!alreadyAdded) {
       wishlist.items.push(req.params.itemId);
       await wishlist.save();
     }
     
+    await wishlist.populate('items');
     res.json(wishlist);
   } catch (error) {
     next(error);
@@ -49,6 +51,7 @@ const removeFromWishlist = async (req, res, next) => {
     if (wishlist) {
       wishlist.items = wishlist.items.filter((item) => item.toString() !== req.params.itemId);
       await wishlist.save();
+      await wishlist.populate('items');
       res.json(wishlist);
     } else {
       res.status(404);

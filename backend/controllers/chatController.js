@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const Conversation = require('../models/Conversation');
 const Message = require('../models/Message');
 
@@ -37,18 +38,41 @@ const getMessages = async (req, res, next) => {
 // @access  Private
 const sendMessage = async (req, res, next) => {
   try {
-    const { receiverId, itemId, text } = req.body;
+    const { receiverId, conversationId, itemId, text } = req.body;
 
-    // Check if conversation exists
-    let conversation = await Conversation.findOne({
-      participants: { $all: [req.user._id, receiverId] },
-      item: itemId,
-    });
+    let conversation;
+
+    // Check if valid conversationId provided
+    if (conversationId && mongoose.Types.ObjectId.isValid(conversationId)) {
+      conversation = await Conversation.findById(conversationId);
+    }
+
+    // Check by receiverId
+    if (!conversation && receiverId && mongoose.Types.ObjectId.isValid(receiverId)) {
+      const query = {
+        participants: { $all: [req.user._id, receiverId] },
+      };
+      if (itemId && mongoose.Types.ObjectId.isValid(itemId)) {
+        query.item = itemId;
+      }
+      conversation = await Conversation.findOne(query);
+
+      if (!conversation) {
+        const convData = {
+          participants: [req.user._id, receiverId],
+          lastMessage: text,
+        };
+        if (itemId && mongoose.Types.ObjectId.isValid(itemId)) {
+          convData.item = itemId;
+        }
+        conversation = await Conversation.create(convData);
+      }
+    }
 
     if (!conversation) {
+      // Fallback create conversation for user
       conversation = await Conversation.create({
-        participants: [req.user._id, receiverId],
-        item: itemId,
+        participants: [req.user._id],
         lastMessage: text,
       });
     } else {

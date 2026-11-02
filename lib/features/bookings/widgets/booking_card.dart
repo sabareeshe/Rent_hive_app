@@ -46,7 +46,9 @@ class BookingCard extends StatelessWidget {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              'Booking #${booking.id.substring(0, 4)}...',
+                              booking.id.length >= 4
+                                  ? 'Booking #${booking.id.substring(0, 4)}...'
+                                  : 'Booking #${booking.id}',
                               style: const TextStyle(color: Colors.grey, fontSize: 12),
                             ),
                             _buildStatusBadge(),

@@ -23,15 +23,16 @@ class MyListingsNotifier extends AsyncNotifier<List<MyListing>> {
     return repository.getMyListings();
   }
 
-  Future<void> addListing(MyListing listing) async {
+  Future<void> addListing(MyListing listing, {List<String>? imagePaths}) async {
     final repository = ref.read(listingsRepositoryProvider);
     // Optimistic update
     state = AsyncData([listing, ...?state.value]);
     try {
-      await repository.addListing(listing);
+      await repository.addListing(listing, imagePaths: imagePaths);
     } catch (e) {
       // Revert on failure
       ref.invalidateSelf();
+      rethrow;
     }
   }
 
@@ -48,6 +49,7 @@ class MyListingsNotifier extends AsyncNotifier<List<MyListing>> {
       await repository.updateListing(listing);
     } catch (e) {
       state = previousState;
+      rethrow;
     }
   }
 

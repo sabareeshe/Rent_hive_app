@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/router/app_router.dart';
 import '../providers/settings_provider.dart';
+import '../providers/profile_provider.dart';
+import '../../auth/providers/auth_provider.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -76,14 +78,17 @@ class SettingsScreen extends ConsumerWidget {
               ListTile(
                 leading: const Icon(Icons.logout, color: Colors.red),
                 title: const Text('Logout', style: TextStyle(color: Colors.red)),
-                onTap: () {
-                  context.go(AppRouter.login);
+                onTap: () async {
+                  await ref.read(authProvider.notifier).logout();
+                  if (context.mounted) {
+                    context.go(AppRouter.login);
+                  }
                 },
               ),
               ListTile(
                 leading: const Icon(Icons.delete_forever, color: Colors.red),
                 title: const Text('Delete Account', style: TextStyle(color: Colors.red)),
-                onTap: () => _showDeleteDialog(context),
+                onTap: () => _showDeleteDialog(context, ref),
               ),
               const SizedBox(height: 32),
             ],
@@ -114,7 +119,7 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
-  void _showDeleteDialog(BuildContext context) {
+  void _showDeleteDialog(BuildContext context, WidgetRef ref) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -123,9 +128,21 @@ class SettingsScreen extends ConsumerWidget {
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(ctx);
-              context.go(AppRouter.login);
+              try {
+                await ref.read(profileRepositoryProvider).deleteAccount();
+                await ref.read(authProvider.notifier).logout();
+                if (context.mounted) {
+                  context.go(AppRouter.login);
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Failed to delete account: $e')),
+                  );
+                }
+              }
             },
             child: const Text('Delete', style: TextStyle(color: Colors.red)),
           ),

@@ -79,15 +79,19 @@ class BookingModel {
       }
     }
 
+    final start = json['startDate'] != null ? DateTime.parse(json['startDate']) : DateTime.now();
+    final end = json['endDate'] != null ? DateTime.parse(json['endDate']) : DateTime.now();
+    final calculatedDays = end.difference(start).inDays <= 0 ? 1 : end.difference(start).inDays;
+
     return BookingModel(
       id: json['_id'] ?? '',
       itemId: json['item'] is Map ? json['item']['_id'] ?? '' : json['item'] ?? '',
       ownerId: json['owner'] is Map ? json['owner']['_id'] ?? '' : json['owner'] ?? '',
       renterId: json['renter'] is Map ? json['renter']['_id'] ?? '' : json['renter'] ?? '',
-      startDate: json['startDate'] != null ? DateTime.parse(json['startDate']) : DateTime.now(),
-      endDate: json['endDate'] != null ? DateTime.parse(json['endDate']) : DateTime.now(),
-      rentalDays: json['totalDays'] ?? 1,
-      rentalCost: (json['price'] ?? 0).toDouble(),
+      startDate: start,
+      endDate: end,
+      rentalDays: json['totalDays'] ?? calculatedDays,
+      rentalCost: (json['rentalAmount'] ?? json['price'] ?? 0).toDouble(),
       securityDeposit: (json['securityDeposit'] ?? 0).toDouble(),
       platformFee: (json['platformFee'] ?? 0).toDouble(),
       tax: (json['tax'] ?? 0).toDouble(),
@@ -102,6 +106,10 @@ class BookingModel {
       'item': itemId,
       'startDate': startDate.toIso8601String(),
       'endDate': endDate.toIso8601String(),
+      'rentalAmount': rentalCost,
+      'securityDeposit': securityDeposit,
+      'platformFee': platformFee,
+      'totalAmount': grandTotal,
     };
   }
 }

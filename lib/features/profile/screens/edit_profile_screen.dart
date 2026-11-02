@@ -44,24 +44,37 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     
     setState(() => _isSaving = true);
     
-    final currentUser = ref.read(currentUserProvider).value;
-    if (currentUser != null) {
-      final updatedUser = currentUser.copyWith(
-        fullName: _nameCtrl.text,
-        bio: _bioCtrl.text,
-        city: _cityCtrl.text,
-        phoneNumber: _phoneCtrl.text,
-      );
-      
-      await ref.read(currentUserProvider.notifier).updateProfile(updatedUser);
+    try {
+      final currentUser = ref.read(currentUserProvider).value;
+      if (currentUser != null) {
+        final updatedUser = currentUser.copyWith(
+          fullName: _nameCtrl.text,
+          bio: _bioCtrl.text,
+          city: _cityCtrl.text,
+          phoneNumber: _phoneCtrl.text,
+        );
+        
+        await ref.read(currentUserProvider.notifier).updateProfile(updatedUser);
+      }
+      if (mounted) context.pop();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to update profile: $e'), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSaving = false);
+      }
     }
-    
-    setState(() => _isSaving = false);
-    if (mounted) context.pop();
   }
 
   @override
   Widget build(BuildContext context) {
+    final user = ref.watch(currentUserProvider).value;
+    final avatarUrl = (user?.avatarUrl.isNotEmpty ?? false) ? user!.avatarUrl : 'https://i.pravatar.cc/150';
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Edit Profile'),
@@ -83,9 +96,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             Center(
               child: Stack(
                 children: [
-                  const CircleAvatar(
+                  CircleAvatar(
                     radius: 50,
-                    backgroundImage: NetworkImage('https://i.pravatar.cc/150?u=mohan'),
+                    backgroundImage: NetworkImage(avatarUrl),
                   ),
                   Positioned(
                     bottom: 0,

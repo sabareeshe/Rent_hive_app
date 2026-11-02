@@ -155,19 +155,29 @@ class _AddEditListingScreenState extends ConsumerState<AddEditListingScreen> {
       totalBookings: _existingListing?.totalBookings ?? 0,
     );
 
-    if (_existingListing != null) {
-      await ref.read(myListingsProvider.notifier).updateListing(listing);
-    } else {
-      await ref.read(myListingsProvider.notifier).addListing(listing);
-    }
+    try {
+      if (_existingListing != null) {
+        await ref.read(myListingsProvider.notifier).updateListing(listing);
+      } else {
+        await ref.read(myListingsProvider.notifier).addListing(listing, imagePaths: _images);
+      }
 
-    setState(() => _isLoading = false);
-    
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_existingListing != null ? 'Listing updated successfully!' : 'Listing added successfully!')),
-      );
-      context.pop();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(_existingListing != null ? 'Listing updated successfully!' : 'Listing added successfully!')),
+        );
+        context.pop();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to save listing: $e'), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
