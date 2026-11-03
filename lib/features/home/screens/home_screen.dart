@@ -6,6 +6,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/router/app_router.dart';
 import '../../engagement/providers/notification_provider.dart';
 import '../../profile/providers/profile_provider.dart';
+import '../../listings/providers/listings_provider.dart';
 import '../data/mock_rentals.dart';
 import '../widgets/category_list.dart';
 import '../widgets/promotional_carousel.dart';
@@ -22,13 +23,20 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   Widget build(BuildContext context) {
-    final trendingItems = mockRentals.where((item) => item.rating >= 4.8).take(5).toList();
-    final nearbyItems = mockRentals.where((item) => item.distance < 2.0).take(5).toList();
-    final recommendedItems = mockRentals.skip(10).take(5).toList();
+    final allItems = ref.watch(publicListingsProvider).value ?? mockRentals;
+    final trendingItems = allItems.where((item) => item.rating >= 4.5).take(10).toList();
+    final nearbyItems = allItems.take(10).toList();
+    final recommendedItems = allItems.length > 5 ? allItems.skip(3).take(10).toList() : allItems;
 
     return Scaffold(
       body: SafeArea(
-        child: SingleChildScrollView(
+        child: RefreshIndicator(
+          onRefresh: () async {
+            ref.invalidate(publicListingsProvider);
+            await ref.read(publicListingsProvider.future);
+          },
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -194,7 +202,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               // Trending Rentals
               SectionHeader(
                 title: 'Trending Rentals',
-                onSeeAll: () => context.push('${AppRouter.search}?query=Trending'),
+                onSeeAll: () => context.push(AppRouter.search),
               ),
               SizedBox(
                 height: 280,
@@ -216,7 +224,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               // Nearby Rentals
               SectionHeader(
                 title: 'Nearby Items',
-                onSeeAll: () => context.push('${AppRouter.search}?query=Nearby'),
+                onSeeAll: () => context.push(AppRouter.search),
               ),
               SizedBox(
                 height: 280,
@@ -238,7 +246,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               // Recommended Items
               SectionHeader(
                 title: 'Recommended For You',
-                onSeeAll: () => context.push('${AppRouter.search}?query=Recommended'),
+                onSeeAll: () => context.push(AppRouter.search),
               ),
               SizedBox(
                 height: 280,
@@ -262,6 +270,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
         ),
       ),
-    );
+    ),
+  );
   }
 }

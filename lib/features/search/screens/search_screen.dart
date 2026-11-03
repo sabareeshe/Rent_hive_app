@@ -1,20 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../home/data/mock_rentals.dart';
 import '../../home/widgets/rental_item_card.dart';
+import '../../listings/providers/listings_provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
-class SearchScreen extends StatefulWidget {
+class SearchScreen extends ConsumerStatefulWidget {
   final String? initialQuery;
   const SearchScreen({super.key, this.initialQuery});
 
   @override
-  State<SearchScreen> createState() => _SearchScreenState();
+  ConsumerState<SearchScreen> createState() => _SearchScreenState();
 }
 
-class _SearchScreenState extends State<SearchScreen> {
+class _SearchScreenState extends ConsumerState<SearchScreen> {
   late TextEditingController _searchController;
   bool _isGridView = true;
   String _searchQuery = '';
@@ -42,7 +44,8 @@ class _SearchScreenState extends State<SearchScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final searchResults = mockRentals
+    final allItems = ref.watch(publicListingsProvider).value ?? mockRentals;
+    final searchResults = allItems
         .where((item) => item.name.toLowerCase().contains(_searchQuery.toLowerCase()) || 
                          item.category.toLowerCase().contains(_searchQuery.toLowerCase()))
         .toList();

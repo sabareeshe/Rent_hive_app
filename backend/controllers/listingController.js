@@ -26,7 +26,7 @@ const getListings = async (req, res, next) => {
       query.condition = condition;
     }
 
-    query.status = 'available';
+    query.status = { $ne: 'archived' };
 
     let sortObj = { createdAt: -1 };
     if (sort === 'price_asc') sortObj = { 'rates.daily': 1 };
@@ -34,7 +34,7 @@ const getListings = async (req, res, next) => {
     if (sort === 'rating') sortObj = { averageRating: -1 };
 
     const listings = await Listing.find(query)
-      .populate('owner', 'name avatarUrl')
+      .populate('owner', 'name username avatarUrl phone')
       .sort(sortObj);
 
     res.json(listings);
@@ -62,7 +62,7 @@ const getMyListings = async (req, res, next) => {
 const getListingById = async (req, res, next) => {
   try {
     const listing = await Listing.findById(req.params.id)
-      .populate('owner', 'name avatarUrl averageRating totalReviews createdAt');
+      .populate('owner', 'name username avatarUrl phone averageRating totalReviews createdAt');
 
     if (listing) {
       // Increment views

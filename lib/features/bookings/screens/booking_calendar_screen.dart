@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../home/models/rental_item.dart';
-import '../../home/data/mock_rentals.dart';
 import '../../listings/providers/listings_provider.dart';
 import '../providers/booking_calculator_provider.dart';
 
@@ -25,28 +24,7 @@ class _BookingCalendarScreenState extends ConsumerState<BookingCalendarScreen> {
   @override
   void initState() {
     super.initState();
-    final myListings = ref.read(myListingsProvider).value ?? [];
-    final matching = myListings.where((l) => l.id == widget.itemId).firstOrNull;
-    if (matching != null) {
-      item = RentalItem(
-        id: matching.id,
-        name: matching.title,
-        images: matching.images.isNotEmpty ? matching.images : ['https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800'],
-        pricePerDay: matching.pricePerDay,
-        rating: 5.0,
-        reviewsCount: 1,
-        distance: 1.0,
-        ownerName: 'You (Owner)',
-        ownerAvatar: 'https://api.dicebear.com/7.x/bottts/png?seed=${matching.id}',
-        category: matching.category,
-        paymentNumber: matching.paymentNumber,
-      );
-    } else {
-      item = mockRentals.firstWhere(
-        (element) => element.id == widget.itemId,
-        orElse: () => mockRentals.first,
-      );
-    }
+    item = ref.read(rentalItemByIdProvider(widget.itemId));
   }
 
   Future<void> _pickDateRange() async {
@@ -87,6 +65,7 @@ class _BookingCalendarScreenState extends ConsumerState<BookingCalendarScreen> {
 
   @override
   Widget build(BuildContext context) {
+    item = ref.watch(rentalItemByIdProvider(widget.itemId));
     final calculation = ref.watch(bookingCalculationStateProvider);
 
     return Scaffold(
