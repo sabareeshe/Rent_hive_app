@@ -117,16 +117,41 @@ class MyListing {
       }
     }
 
+    double parseNum(dynamic val) {
+      if (val is num) return val.toDouble();
+      if (val is String) return double.tryParse(val) ?? 0.0;
+      return 0.0;
+    }
+
+    final rawImages = json['images'] as List?;
+    final imagesList = (rawImages != null && rawImages.isNotEmpty)
+        ? rawImages.map((e) {
+            var s = e.toString().trim();
+            if (s.isEmpty) return 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800';
+            if (s.contains('/uploads/')) {
+              final filename = s.split('/uploads/').last;
+              return 'https://rent-hive-app.onrender.com/uploads/$filename';
+            }
+            if (s.startsWith('http://')) {
+              return s.replaceFirst('http://', 'https://');
+            }
+            if (s.startsWith('https://')) {
+              return s;
+            }
+            return 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800';
+          }).toList()
+        : <String>['https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800'];
+
     return MyListing(
-      id: json['_id'] ?? '',
+      id: json['_id'] ?? json['id'] ?? '',
       title: json['title'] ?? '',
       description: json['description'] ?? '',
       category: json['category'] ?? '',
       condition: parseCondition(json['condition'] ?? ''),
-      pricePerDay: (json['rates']?['daily'] ?? 0).toDouble(),
-      pricePerWeek: (json['rates']?['weekly'] ?? 0).toDouble(),
-      pricePerMonth: (json['rates']?['monthly'] ?? 0).toDouble(),
-      securityDeposit: (json['securityDeposit'] ?? 0).toDouble(),
+      pricePerDay: parseNum(json['rates']?['daily'] ?? json['pricePerDay']),
+      pricePerWeek: parseNum(json['rates']?['weekly'] ?? json['pricePerWeek']),
+      pricePerMonth: parseNum(json['rates']?['monthly'] ?? json['pricePerMonth']),
+      securityDeposit: parseNum(json['securityDeposit']),
       quantityAvailable: json['quantity'] ?? 1,
       pickupAddress: json['location']?['address'] ?? '',
       city: json['location']?['city'] ?? '',
@@ -134,11 +159,11 @@ class MyListing {
       pincode: json['location']?['zip'] ?? '',
       availableFrom: DateTime.now(), // Simplified
       availableTo: DateTime.now().add(const Duration(days: 90)),
-      images: List<String>.from(json['images'] ?? []),
+      images: imagesList,
       status: parseStatus(json['status'] ?? 'available'),
       totalViews: json['totalViews'] ?? 0,
       totalBookings: json['totalRentals'] ?? 0,
-      paymentNumber: json['paymentNumber'] ?? json['owner']?['phone'] ?? '',
+      paymentNumber: json['paymentNumber']?.toString() ?? json['owner']?['phone']?.toString() ?? '',
     );
   }
 
@@ -165,6 +190,7 @@ class MyListing {
       'securityDeposit': securityDeposit,
       'quantity': quantityAvailable,
       'paymentNumber': paymentNumber,
+      'images': images,
       'location': {
         'address': pickupAddress,
         'city': city,

@@ -12,18 +12,32 @@ class ListingsRepository {
 
   Future<List<MyListing>> getMyListings() async {
     final prefs = await SharedPreferences.getInstance();
+    final cached = prefs.getString('cached_my_listings');
+    List<MyListing> localListings = [];
+    if (cached != null) {
+      try {
+        localListings = (jsonDecode(cached) as List).map((x) => MyListing.fromJson(x)).toList();
+      } catch (_) {}
+    }
+
     try {
       final response = await _dio.get('/listings/my-listings');
-      final listings = (response.data as List).map((x) => MyListing.fromJson(x)).toList();
+      final serverListings = (response.data as List).map((x) => MyListing.fromJson(x)).toList();
       
-      await prefs.setString('cached_my_listings', jsonEncode(response.data));
-      return listings;
+      // Merge: server listings + local listings not yet synced
+      final serverIds = serverListings.map((e) => e.id).toSet();
+      final combined = [
+        ...serverListings,
+        ...localListings.where((l) => !serverIds.contains(l.id)),
+      ];
+
+      await prefs.setString('cached_my_listings', jsonEncode(combined.map((e) => e.toJson()..['_id'] = e.id).toList()));
+      return combined;
     } catch (e) {
-      final cached = prefs.getString('cached_my_listings');
-      if (cached != null) {
-        return (jsonDecode(cached) as List).map((x) => MyListing.fromJson(x)).toList();
+      if (localListings.isNotEmpty) {
+        return localListings;
       }
-      rethrow;
+      return [];
     }
   }
 
@@ -49,7 +63,7 @@ class ListingsRepository {
     }
   }
 
-  Future<void> addListing(MyListing listing, {List<String>? imagePaths}) async {
+  Future<MyListing> addListing(MyListing listing, {List<String>? imagePaths}) async {
     FormData? formData;
     
     if (imagePaths != null && imagePaths.isNotEmpty) {
@@ -87,15 +101,40 @@ class ListingsRepository {
       }
     }
 
+    Response response;
     try {
-      await _dio.post('/listings', data: formData ?? listing.toJson());
+      response = await _dio.post('/listings', data: formData ?? listing.toJson());
     } catch (e) {
       if (formData != null) {
-        await _dio.post('/listings', data: listing.toJson());
+        response = await _dio.post('/listings', data: listing.toJson());
       } else {
         rethrow;
       }
     }
+
+    MyListing created = listing;
+    if (response.data is Map<String, dynamic>) {
+      created = MyListing.fromJson(response.data);
+    }
+
+    // Persist to local cache immediately so it never disappears on refresh
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final cachedStr = prefs.getString('cached_my_listings');
+      List<dynamic> existingList = [];
+      if (cachedStr != null) {
+        try {
+          existingList = jsonDecode(cachedStr) as List;
+        } catch (_) {}
+      }
+      final updatedList = [
+        created.toJson()..['_id'] = created.id,
+        ...existingList.where((item) => (item['_id'] ?? item['id']) != created.id && (item['_id'] ?? item['id']) != listing.id)
+      ];
+      await prefs.setString('cached_my_listings', jsonEncode(updatedList));
+    } catch (_) {}
+
+    return created;
   }
 
   Future<void> updateListing(MyListing updatedListing) async {

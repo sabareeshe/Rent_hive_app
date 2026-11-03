@@ -29,10 +29,24 @@ class RentalItem {
     final id = json['_id'] ?? json['id'] ?? '';
     final rates = json['rates'] is Map ? json['rates'] : null;
     final dailyRate = rates?['daily'] ?? json['pricePerDay'] ?? json['dailyRate'] ?? 0;
-    final imagesList = (json['images'] as List?)?.map((e) => e.toString()).toList() ?? [];
-    if (imagesList.isEmpty) {
-      imagesList.add('https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800');
-    }
+    final rawImages = json['images'] as List?;
+    final imagesList = (rawImages != null && rawImages.isNotEmpty)
+        ? rawImages.map((e) {
+            var s = e.toString().trim();
+            if (s.isEmpty) return 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800';
+            if (s.contains('/uploads/')) {
+              final filename = s.split('/uploads/').last;
+              return 'https://rent-hive-app.onrender.com/uploads/$filename';
+            }
+            if (s.startsWith('http://')) {
+              return s.replaceFirst('http://', 'https://');
+            }
+            if (s.startsWith('https://')) {
+              return s;
+            }
+            return 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800';
+          }).toList()
+        : <String>['https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800'];
 
     String ownerName = 'Verified Owner';
     String ownerAvatar = '';
@@ -41,6 +55,9 @@ class RentalItem {
     if (json['owner'] is Map) {
       ownerName = json['owner']['name'] ?? json['owner']['username'] ?? 'Verified Owner';
       ownerAvatar = json['owner']['avatarUrl']?.toString() ?? '';
+      if (ownerAvatar.startsWith('http://')) {
+        ownerAvatar = ownerAvatar.replaceFirst('http://', 'https://');
+      }
       if (paymentNum.isEmpty && json['owner']['phone'] != null) {
         paymentNum = json['owner']['phone'].toString();
       }

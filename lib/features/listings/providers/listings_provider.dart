@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/my_listing.dart';
 import '../repositories/listings_repository.dart';
@@ -13,21 +15,57 @@ final listingsRepositoryProvider = Provider<ListingsRepository>((ref) {
 // Global provider for all public listings available to any user
 final publicListingsProvider = FutureProvider<List<RentalItem>>((ref) async {
   final dio = ref.watch(dioProvider);
+  final myListings = ref.watch(myListingsProvider).value ?? [];
+
+  List<RentalItem> serverItems = [];
   try {
     final response = await dio.get('/listings');
     final rawList = response.data as List;
-    final serverItems = rawList.map((x) => RentalItem.fromJson(x)).toList();
-
-    // Place real server listings FIRST so any new listing by another user is immediately prominent
-    final serverIds = serverItems.map((e) => e.id).toSet();
-    final combined = [
-      ...serverItems,
-      ...mockRentals.where((m) => !serverIds.contains(m.id)),
-    ];
-    return combined;
+    serverItems = rawList.map((x) => RentalItem.fromJson(x)).toList();
   } catch (e) {
-    return mockRentals;
+    // If Render cold-starts or delays, serverItems remains empty
   }
+
+  // Map user's listings into RentalItems
+  final myRentalItems = myListings.map((l) => RentalItem(
+    id: l.id,
+    name: l.title,
+    images: l.images.isNotEmpty ? l.images : ['https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800'],
+    pricePerDay: l.pricePerDay,
+    rating: 5.0,
+    reviewsCount: 1,
+    distance: 1.0,
+    ownerName: 'You (Owner)',
+    ownerAvatar: 'https://api.dicebear.com/7.x/bottts/png?seed=${l.id}',
+    category: l.category,
+    paymentNumber: l.paymentNumber,
+  )).toList();
+
+  final seenIds = <String>{};
+  final List<RentalItem> combined = [];
+
+  // 1. User's newly created/saved listings
+  for (final item in myRentalItems) {
+    if (seenIds.add(item.id)) {
+      combined.add(item);
+    }
+  }
+
+  // 2. Real server listings from other users and self
+  for (final item in serverItems) {
+    if (seenIds.add(item.id)) {
+      combined.add(item);
+    }
+  }
+
+  // 3. Fallback mock rentals
+  for (final item in mockRentals) {
+    if (seenIds.add(item.id)) {
+      combined.add(item);
+    }
+  }
+
+  return combined;
 });
 
 // Single source of truth to resolve any listing item by id
@@ -87,7 +125,12 @@ class MyListingsNotifier extends AsyncNotifier<List<MyListing>> {
     // Optimistic update
     state = AsyncData([listing, ...?state.value]);
     try {
-      await repository.addListing(listing, imagePaths: imagePaths);
+      final created = await repository.addListing(listing, imagePaths: imagePaths);
+      final currentList = state.value ?? [];
+      state = AsyncData([
+        created,
+        ...currentList.where((l) => l.id != listing.id && l.id != created.id),
+      ]);
       ref.invalidate(publicListingsProvider);
     } catch (e) {
       // Revert on failure
@@ -107,6 +150,15 @@ class MyListingsNotifier extends AsyncNotifier<List<MyListing>> {
     }
     try {
       await repository.updateListing(listing);
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        if (state.value != null) {
+          await prefs.setString(
+            'cached_my_listings',
+            jsonEncode(state.value!.map((e) => e.toJson()..['_id'] = e.id).toList()),
+          );
+        }
+      } catch (_) {}
       ref.invalidate(publicListingsProvider);
     } catch (e) {
       state = previousState;
@@ -122,6 +174,15 @@ class MyListingsNotifier extends AsyncNotifier<List<MyListing>> {
     }
     try {
       await repository.deleteListing(id);
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        if (state.value != null) {
+          await prefs.setString(
+            'cached_my_listings',
+            jsonEncode(state.value!.map((e) => e.toJson()..['_id'] = e.id).toList()),
+          );
+        }
+      } catch (_) {}
       ref.invalidate(publicListingsProvider);
     } catch (e) {
       state = previousState;

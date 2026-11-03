@@ -32,6 +32,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: () async {
+            ref.invalidate(myListingsProvider);
             ref.invalidate(publicListingsProvider);
             await ref.read(publicListingsProvider.future);
           },

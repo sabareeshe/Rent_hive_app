@@ -27,18 +27,26 @@ class RentalItemCard extends StatelessWidget {
               children: [
                 Hero(
                   tag: 'rental_image_${item.id}',
-                  child: Container(
-                    height: 180,
-                    width: 180,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(16),
-                      image: DecorationImage(
-                        image: CachedNetworkImageProvider(
-                          item.images.isNotEmpty
-                              ? item.images.first
-                              : 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?q=80&w=600&auto=format&fit=crop',
-                        ),
-                        fit: BoxFit.cover,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: CachedNetworkImage(
+                      imageUrl: item.images.isNotEmpty
+                          ? item.images.first
+                          : 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?q=80&w=600&auto=format&fit=crop',
+                      height: 180,
+                      width: 180,
+                      fit: BoxFit.cover,
+                      placeholder: (context, url) => Container(
+                        height: 180,
+                        width: 180,
+                        color: Colors.grey.shade200,
+                        child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                      ),
+                      errorWidget: (context, url, error) => Container(
+                        height: 180,
+                        width: 180,
+                        color: Colors.grey.shade200,
+                        child: const Icon(Icons.broken_image_outlined, size: 40, color: Colors.grey),
                       ),
                     ),
                   ),
