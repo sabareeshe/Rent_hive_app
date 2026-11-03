@@ -9,6 +9,7 @@ class RentalItem {
   final String ownerName;
   final String ownerAvatar;
   final String category;
+  final String paymentNumber;
 
   RentalItem({
     required this.id,
@@ -21,6 +22,7 @@ class RentalItem {
     required this.ownerName,
     required this.ownerAvatar,
     required this.category,
+    this.paymentNumber = '',
   });
 
   factory RentalItem.fromJson(Map<String, dynamic> json) {
@@ -37,6 +39,7 @@ class RentalItem {
           ? json['owner']['avatarUrl']
           : 'https://api.dicebear.com/7.x/bottts/png?seed=${json['owner'] is Map ? (json['owner']['_id'] ?? json['owner']['username'] ?? 'owner') : 'owner'}',
       category: json['category'] ?? '',
+      paymentNumber: json['paymentNumber'] ?? json['owner']?['phone'] ?? '',
     );
   }
 }

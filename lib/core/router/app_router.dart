@@ -237,7 +237,10 @@ class AppRouter {
             routes: [
               GoRoute(
                 path: search,
-                builder: (context, state) => const SearchScreen(),
+                builder: (context, state) {
+                  final query = state.uri.queryParameters['query'];
+                  return SearchScreen(initialQuery: query);
+                },
               ),
             ],
           ),

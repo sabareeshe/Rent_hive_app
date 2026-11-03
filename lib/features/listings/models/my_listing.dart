@@ -22,6 +22,7 @@ class MyListing {
   final ListingStatus status;
   final int totalViews;
   final int totalBookings;
+  final String paymentNumber;
 
   MyListing({
     required this.id,
@@ -44,6 +45,7 @@ class MyListing {
     this.status = ListingStatus.available,
     this.totalViews = 0,
     this.totalBookings = 0,
+    this.paymentNumber = '',
   });
 
   MyListing copyWith({
@@ -67,6 +69,7 @@ class MyListing {
     ListingStatus? status,
     int? totalViews,
     int? totalBookings,
+    String? paymentNumber,
   }) {
     return MyListing(
       id: id ?? this.id,
@@ -89,6 +92,7 @@ class MyListing {
       status: status ?? this.status,
       totalViews: totalViews ?? this.totalViews,
       totalBookings: totalBookings ?? this.totalBookings,
+      paymentNumber: paymentNumber ?? this.paymentNumber,
     );
   }
 
@@ -134,6 +138,7 @@ class MyListing {
       status: parseStatus(json['status'] ?? 'available'),
       totalViews: json['totalViews'] ?? 0,
       totalBookings: json['totalRentals'] ?? 0,
+      paymentNumber: json['paymentNumber'] ?? json['owner']?['phone'] ?? '',
     );
   }
 
@@ -159,6 +164,7 @@ class MyListing {
       },
       'securityDeposit': securityDeposit,
       'quantity': quantityAvailable,
+      'paymentNumber': paymentNumber,
       'location': {
         'address': pickupAddress,
         'city': city,

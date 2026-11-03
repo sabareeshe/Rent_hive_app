@@ -28,6 +28,7 @@ class _AddEditListingScreenState extends ConsumerState<AddEditListingScreen> {
   late TextEditingController _cityController;
   late TextEditingController _stateController;
   late TextEditingController _pincodeController;
+  late TextEditingController _paymentNumberController;
 
   String _selectedCategory = 'Electronics';
   ItemCondition _selectedCondition = ItemCondition.good;
@@ -57,6 +58,7 @@ class _AddEditListingScreenState extends ConsumerState<AddEditListingScreen> {
     _cityController = TextEditingController();
     _stateController = TextEditingController();
     _pincodeController = TextEditingController();
+    _paymentNumberController = TextEditingController();
 
     if (widget.listingId != null) {
       _loadExistingListing();
@@ -79,6 +81,7 @@ class _AddEditListingScreenState extends ConsumerState<AddEditListingScreen> {
       _cityController.text = _existingListing!.city;
       _stateController.text = _existingListing!.state;
       _pincodeController.text = _existingListing!.pincode;
+      _paymentNumberController.text = _existingListing!.paymentNumber;
       _selectedCategory = _existingListing!.category;
       _selectedCondition = _existingListing!.condition;
       _availableFrom = _existingListing!.availableFrom;
@@ -102,6 +105,7 @@ class _AddEditListingScreenState extends ConsumerState<AddEditListingScreen> {
     _cityController.dispose();
     _stateController.dispose();
     _pincodeController.dispose();
+    _paymentNumberController.dispose();
     super.dispose();
   }
 
@@ -123,33 +127,50 @@ class _AddEditListingScreenState extends ConsumerState<AddEditListingScreen> {
   Future<void> _saveListing() async {
     if (!_formKey.currentState!.validate()) return;
     
-    if (_images.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please add at least one photo.')),
-      );
-      return;
+    List<String> finalImages = List.from(_images);
+    if (finalImages.isEmpty) {
+      final categoryImages = {
+        'Electronics': 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800',
+        'Furniture': 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=800',
+        'Cameras': 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=800',
+        'Books': 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=800',
+        'Sports': 'https://images.unsplash.com/photo-1517649763962-0c623266ddc0?w=800',
+        'Gaming': 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=800',
+        'Vehicles': 'https://images.unsplash.com/photo-1558981806-ec527fa84c39?w=800',
+        'Tools': 'https://images.unsplash.com/photo-1581244277943-fe4a9c777189?w=800',
+        'Home Appliances': 'https://images.unsplash.com/photo-1584269600464-37b1b58a9fe7?w=800',
+        'Musical Instruments': 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=800',
+      };
+      finalImages.add(categoryImages[_selectedCategory] ?? 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800');
     }
 
     setState(() => _isLoading = true);
 
+    final double priceDay = double.tryParse(_priceDayController.text.trim()) ?? 10.0;
+    final double priceWeek = double.tryParse(_priceWeekController.text.trim()) ?? (priceDay * 6);
+    final double priceMonth = double.tryParse(_priceMonthController.text.trim()) ?? (priceDay * 24);
+    final double deposit = double.tryParse(_depositController.text.trim()) ?? 0.0;
+    final int qty = int.tryParse(_qtyController.text.trim()) ?? 1;
+
     final listing = MyListing(
       id: _existingListing?.id ?? DateTime.now().millisecondsSinceEpoch.toString(),
-      title: _titleController.text,
-      description: _descController.text,
+      title: _titleController.text.trim(),
+      description: _descController.text.trim(),
       category: _selectedCategory,
       condition: _selectedCondition,
-      pricePerDay: double.parse(_priceDayController.text),
-      pricePerWeek: double.parse(_priceWeekController.text),
-      pricePerMonth: double.parse(_priceMonthController.text),
-      securityDeposit: double.parse(_depositController.text),
-      quantityAvailable: int.parse(_qtyController.text),
-      pickupAddress: _addressController.text,
-      city: _cityController.text,
-      state: _stateController.text,
-      pincode: _pincodeController.text,
+      pricePerDay: priceDay,
+      pricePerWeek: priceWeek,
+      pricePerMonth: priceMonth,
+      securityDeposit: deposit,
+      quantityAvailable: qty,
+      pickupAddress: _addressController.text.trim(),
+      city: _cityController.text.trim(),
+      state: _stateController.text.trim(),
+      pincode: _pincodeController.text.trim(),
       availableFrom: _availableFrom,
       availableTo: _availableTo,
-      images: _images,
+      images: finalImages,
+      paymentNumber: _paymentNumberController.text.trim(),
       status: _existingListing?.status ?? ListingStatus.available,
       totalViews: _existingListing?.totalViews ?? 0,
       totalBookings: _existingListing?.totalBookings ?? 0,
@@ -159,19 +180,19 @@ class _AddEditListingScreenState extends ConsumerState<AddEditListingScreen> {
       if (_existingListing != null) {
         await ref.read(myListingsProvider.notifier).updateListing(listing);
       } else {
-        await ref.read(myListingsProvider.notifier).addListing(listing, imagePaths: _images);
+        await ref.read(myListingsProvider.notifier).addListing(listing, imagePaths: finalImages);
       }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(_existingListing != null ? 'Listing updated successfully!' : 'Listing added successfully!')),
+          SnackBar(content: Text(_existingListing != null ? 'Listing updated successfully!' : 'Listing published successfully!')),
         );
         context.pop();
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to save listing: $e'), backgroundColor: Colors.red),
+          SnackBar(content: Text('Failed to publish listing: $e'), backgroundColor: Colors.red),
         );
       }
     } finally {
@@ -289,6 +310,20 @@ class _AddEditListingScreenState extends ConsumerState<AddEditListingScreen> {
                 keyboardType: TextInputType.number,
                 decoration: const InputDecoration(labelText: 'Quantity Available'),
                 validator: (value) => value == null || value.isEmpty ? 'Required' : null,
+              ),
+
+              const SizedBox(height: 32),
+              _buildSectionTitle('Payment Details'),
+              TextFormField(
+                controller: _paymentNumberController,
+                keyboardType: TextInputType.text,
+                decoration: const InputDecoration(
+                  labelText: 'Payment / UPI Number',
+                  hintText: 'e.g. 9876543210 or your_name@upi',
+                  prefixIcon: Icon(Icons.account_balance_wallet_outlined),
+                  helperText: 'Rental earnings from renters will be paid directly to this number/UPI ID',
+                ),
+                validator: (value) => value == null || value.trim().isEmpty ? 'Required for receiving payments' : null,
               ),
 
               const SizedBox(height: 32),

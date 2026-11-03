@@ -183,13 +183,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               const SizedBox(height: 16),
 
               // Categories
-              SectionHeader(title: 'Categories', onSeeAll: () {}),
+              SectionHeader(
+                title: 'Categories',
+                onSeeAll: () => context.push(AppRouter.search),
+              ),
               CategoryList().animate().fadeIn(delay: 200.ms).slideX(begin: 0.1),
 
               const SizedBox(height: 16),
 
               // Trending Rentals
-              SectionHeader(title: 'Trending Rentals', onSeeAll: () {}),
+              SectionHeader(
+                title: 'Trending Rentals',
+                onSeeAll: () => context.push('${AppRouter.search}?query=Trending'),
+              ),
               SizedBox(
                 height: 280,
                 child: ListView.builder(
@@ -208,7 +214,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ).animate().fadeIn(delay: 300.ms).slideX(begin: 0.1),
 
               // Nearby Rentals
-              SectionHeader(title: 'Nearby Items', onSeeAll: () {}),
+              SectionHeader(
+                title: 'Nearby Items',
+                onSeeAll: () => context.push('${AppRouter.search}?query=Nearby'),
+              ),
               SizedBox(
                 height: 280,
                 child: ListView.builder(
@@ -227,7 +236,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ).animate().fadeIn(delay: 400.ms).slideX(begin: 0.1),
 
               // Recommended Items
-              SectionHeader(title: 'Recommended For You', onSeeAll: () {}),
+              SectionHeader(
+                title: 'Recommended For You',
+                onSeeAll: () => context.push('${AppRouter.search}?query=Recommended'),
+              ),
               SizedBox(
                 height: 280,
                 child: ListView.builder(

@@ -7,19 +7,32 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
 class SearchScreen extends StatefulWidget {
-  const SearchScreen({super.key});
+  final String? initialQuery;
+  const SearchScreen({super.key, this.initialQuery});
 
   @override
   State<SearchScreen> createState() => _SearchScreenState();
 }
 
 class _SearchScreenState extends State<SearchScreen> {
-  final TextEditingController _searchController = TextEditingController();
+  late TextEditingController _searchController;
   bool _isGridView = true;
   String _searchQuery = '';
 
+  final List<String> _categories = [
+    'All', 'Electronics', 'Furniture', 'Cameras', 'Books', 'Sports',
+    'Gaming', 'Vehicles', 'Tools', 'Home Appliances', 'Musical Instruments'
+  ];
+
   final List<String> _recentSearches = ['Sony Camera', 'Drill', 'Tent', 'PS5'];
   final List<String> _popularSearches = ['Camping Gear', 'Party Speakers', 'Lawn Mower', 'Bicycles'];
+
+  @override
+  void initState() {
+    super.initState();
+    _searchQuery = widget.initialQuery ?? '';
+    _searchController = TextEditingController(text: _searchQuery);
+  }
 
   @override
   void dispose() {
@@ -77,7 +90,50 @@ class _SearchScreenState extends State<SearchScreen> {
           ),
         ],
       ),
-      body: _searchQuery.isEmpty ? _buildInitialSearch() : _buildSearchResults(searchResults),
+      body: Column(
+        children: [
+          SizedBox(
+            height: 48,
+            child: ListView.separated(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              scrollDirection: Axis.horizontal,
+              itemCount: _categories.length,
+              separatorBuilder: (context, index) => const SizedBox(width: 8),
+              itemBuilder: (context, idx) {
+                final cat = _categories[idx];
+                final isSelected = (cat == 'All' && _searchQuery.isEmpty) ||
+                    _searchQuery.toLowerCase() == cat.toLowerCase();
+                return ChoiceChip(
+                  label: Text(cat),
+                  selected: isSelected,
+                  selectedColor: AppColors.primary,
+                  labelStyle: TextStyle(
+                    color: isSelected ? Colors.white : Colors.black87,
+                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                    fontSize: 12,
+                  ),
+                  onSelected: (selected) {
+                    setState(() {
+                      if (cat == 'All') {
+                        _searchQuery = '';
+                        _searchController.clear();
+                      } else {
+                        _searchQuery = cat;
+                        _searchController.text = cat;
+                      }
+                    });
+                  },
+                );
+              },
+            ),
+          ),
+          Expanded(
+            child: _searchQuery.isEmpty
+                ? _buildInitialSearch()
+                : _buildSearchResults(searchResults),
+          ),
+        ],
+      ),
     );
   }
 

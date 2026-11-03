@@ -102,35 +102,43 @@ const createListing = async (req, res, next) => {
       address,
       rates,
       location,
+      paymentNumber,
     } = body;
 
-    const rateDaily = (rates && rates.daily !== undefined) ? rates.daily : dailyRate;
-    const rateWeekly = (rates && rates.weekly !== undefined) ? rates.weekly : body.weeklyRate;
-    const rateMonthly = (rates && rates.monthly !== undefined) ? rates.monthly : body.monthlyRate;
+    const rateDaily = Number((rates && rates.daily !== undefined) ? rates.daily : (dailyRate || body.pricePerDay || 0)) || 10;
+    const rateWeekly = Number((rates && rates.weekly !== undefined) ? rates.weekly : (body.weeklyRate || body.pricePerWeek || (rateDaily * 6)));
+    const rateMonthly = Number((rates && rates.monthly !== undefined) ? rates.monthly : (body.monthlyRate || body.pricePerMonth || (rateDaily * 24)));
 
     const images = req.files && req.files.length > 0
-      ? req.files.map((file) => file.path)
-      : (body.images && body.images.length > 0 ? body.images : ['https://via.placeholder.com/400']);
+      ? req.files.map((file) => file.path.startsWith('http')
+          ? file.path.replace('http://', 'https://')
+          : `https://${req.get('host')}/uploads/${file.filename}`
+        )
+      : (body.images && body.images.length > 0 ? body.images : ['https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800']);
 
-    const loc = location || {
-      address: address || body.pickupAddress || '',
-      city: body.city || '',
-      state: body.state || '',
-      coordinates: [0, 0],
+    const loc = {
+      type: 'Point',
+      coordinates: (location && Array.isArray(location.coordinates) && location.coordinates.length === 2)
+        ? location.coordinates
+        : [0, 0],
+      address: (location && location.address) || address || body.pickupAddress || '',
+      city: (location && location.city) || body.city || '',
+      state: (location && location.state) || body.state || '',
     };
 
     const listing = new Listing({
       owner: req.user._id,
-      title,
-      category,
-      description,
-      condition: condition || 'Good',
+      title: title || 'Rental Item',
+      category: category || 'General',
+      description: description || 'Available for rent.',
+      condition: condition || body.condition || 'Good',
       rates: {
         daily: rateDaily,
         weekly: rateWeekly,
         monthly: rateMonthly,
       },
-      securityDeposit: securityDeposit || 0,
+      securityDeposit: Number(securityDeposit !== undefined ? securityDeposit : (body.deposit || 0)) || 0,
+      paymentNumber: paymentNumber || body.paymentNumber || '',
       images,
       location: loc,
     });
@@ -183,6 +191,9 @@ const updateListing = async (req, res, next) => {
       if (body.securityDeposit !== undefined) {
         listing.securityDeposit = body.securityDeposit;
       }
+      if (body.paymentNumber !== undefined) {
+        listing.paymentNumber = body.paymentNumber;
+      }
       listing.status = body.status || listing.status;
 
       if (body.location) {
@@ -197,7 +208,10 @@ const updateListing = async (req, res, next) => {
       }
 
       if (req.files && req.files.length > 0) {
-        listing.images = req.files.map((file) => file.path);
+        listing.images = req.files.map((file) => file.path.startsWith('http')
+          ? file.path.replace('http://', 'https://')
+          : `https://${req.get('host')}/uploads/${file.filename}`
+        );
       } else if (body.images && body.images.length > 0) {
         listing.images = body.images;
       }

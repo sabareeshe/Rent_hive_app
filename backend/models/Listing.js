@@ -35,6 +35,10 @@ const listingSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
+    paymentNumber: {
+      type: String,
+      default: '',
+    },
     images: [
       {
         type: String,

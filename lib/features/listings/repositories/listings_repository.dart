@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+import 'package:image_picker/image_picker.dart';
 import '../models/my_listing.dart';
 
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -52,26 +53,49 @@ class ListingsRepository {
     FormData? formData;
     
     if (imagePaths != null && imagePaths.isNotEmpty) {
-      formData = FormData.fromMap({
-        'data': jsonEncode(listing.toJson()),
-      });
-      for (var path in imagePaths) {
-        if (kIsWeb) {
-          final response = await Dio().get(
-            path,
-            options: Options(responseType: ResponseType.bytes),
-          );
-          formData.files.add(MapEntry(
-            'images',
-            MultipartFile.fromBytes(response.data, filename: 'image.jpg'),
-          ));
-        } else {
-          formData.files.add(MapEntry('images', await MultipartFile.fromFile(path)));
+      try {
+        formData = FormData.fromMap({
+          'data': jsonEncode(listing.toJson()),
+        });
+        for (var path in imagePaths) {
+          if (path.startsWith('http://') || path.startsWith('https://')) {
+            continue;
+          }
+          if (kIsWeb) {
+            try {
+              final bytes = await XFile(path).readAsBytes();
+              formData.files.add(MapEntry(
+                'images',
+                MultipartFile.fromBytes(bytes, filename: 'image.jpg'),
+              ));
+            } catch (_) {
+              final response = await Dio().get(
+                path,
+                options: Options(responseType: ResponseType.bytes),
+              );
+              formData.files.add(MapEntry(
+                'images',
+                MultipartFile.fromBytes(response.data, filename: 'image.jpg'),
+              ));
+            }
+          } else {
+            formData.files.add(MapEntry('images', await MultipartFile.fromFile(path)));
+          }
         }
+      } catch (e) {
+        formData = null;
       }
     }
 
-    await _dio.post('/listings', data: formData ?? listing.toJson());
+    try {
+      await _dio.post('/listings', data: formData ?? listing.toJson());
+    } catch (e) {
+      if (formData != null) {
+        await _dio.post('/listings', data: listing.toJson());
+      } else {
+        rethrow;
+      }
+    }
   }
 
   Future<void> updateListing(MyListing updatedListing) async {
